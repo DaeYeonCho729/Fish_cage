@@ -1,0 +1,274 @@
+{
+  "group": "FLOATER_BRACKET",
+  "label": "Floater(braket)",
+  "baseN": 1681,
+  "extra_points": [],
+  "edges": [
+    [
+      0,
+      1657
+    ],
+    [
+      3,
+      1658
+    ],
+    [
+      6,
+      1659
+    ],
+    [
+      9,
+      1660
+    ],
+    [
+      12,
+      1661
+    ],
+    [
+      15,
+      1662
+    ],
+    [
+      18,
+      1663
+    ],
+    [
+      21,
+      1664
+    ],
+    [
+      24,
+      1665
+    ],
+    [
+      27,
+      1666
+    ],
+    [
+      30,
+      1667
+    ],
+    [
+      33,
+      1668
+    ],
+    [
+      36,
+      1669
+    ],
+    [
+      39,
+      1670
+    ],
+    [
+      42,
+      1671
+    ],
+    [
+      45,
+      1672
+    ],
+    [
+      48,
+      1673
+    ],
+    [
+      51,
+      1674
+    ],
+    [
+      54,
+      1675
+    ],
+    [
+      57,
+      1676
+    ],
+    [
+      60,
+      1677
+    ],
+    [
+      63,
+      1678
+    ],
+    [
+      66,
+      1679
+    ],
+    [
+      69,
+      1680
+    ]
+  ],
+  "polylines": [
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        0,
+        1657
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        3,
+        1658
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        6,
+        1659
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        9,
+        1660
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        12,
+        1661
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        15,
+        1662
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        18,
+        1663
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        21,
+        1664
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        24,
+        1665
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        27,
+        1666
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        30,
+        1667
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        33,
+        1668
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        36,
+        1669
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        39,
+        1670
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        42,
+        1671
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        45,
+        1672
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        48,
+        1673
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        51,
+        1674
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        54,
+        1675
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        57,
+        1676
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        60,
+        1677
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        63,
+        1678
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        66,
+        1679
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        69,
+        1680
+      ]
+    }
+  ]
+}

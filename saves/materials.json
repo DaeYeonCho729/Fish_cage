@@ -1,0 +1,26 @@
+{
+  "Floater": {
+    "FloaterYoungModule": 1000000000.0,
+    "RHO": 1140.0,
+    "Floaterdiameter": 0.1,
+    "Floaterthickness": 0.05
+  },
+  "Net": {
+    "NetYoungModule": 1000000000.0,
+    "RHO": 1200.0,
+    "twine_dia": 0.005,
+    "Mesh_length": 0.05,
+    "BottomNet_cen_weight": 5.0
+  },
+  "Bottom_ring": {
+    "BrYoungModule": 1000000000.0,
+    "RHO": 1140.0,
+    "Br_diameter": 0.05,
+    "meter_per_w": 5.0
+  },
+  "Bracket": {
+    "BrktYoungModule": 1000000000.0,
+    "RHO": 1140.0,
+    "Brkt_diameter": 0.05
+  }
+}
