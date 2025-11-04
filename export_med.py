@@ -393,6 +393,95 @@ def export_all_to_med(outpath="fish_cage.med"):
     mesh.Compute()
     mesh.ExportMED(outpath, 0)
     print(f"✅ MED exported: {outpath}")
+
+        # ---------------- meshinfo.json (MED 노드 번호로 저장) ----------------
+    try:
+        # 0) 준비
+        os.makedirs(os.path.join(BASE_DIR, "saves"), exist_ok=True)
+
+        # net_points.json에서 z_float, surfs_netting(0-베이스) 읽기
+        net_json_path = os.path.join(BASE_DIR, "net_points.json")
+        net_raw = jload(net_json_path, {})
+        z_float = float(net_raw.get("z_float", 0.0))
+        surfs_from_net = net_raw.get("surfs_netting", []) or []
+
+        # 1) MED 노드 번호(ID) ↔ 좌표
+        #    - node_ids: 우리가 AddNode할 때 받은 SMESH Node ID(보통 1..N)
+        #    - coords_by_med[nid] = (x,y,z)
+        coords_by_med = {}
+        for nid in node_ids:
+            x, y, z = mesh.GetNodeXYZ(nid)
+            coords_by_med[int(nid)] = [float(x), float(y), float(z)]
+
+        # 2) edge 그룹을 MED 노드 번호로 변환
+        #    edge_ids[global_edge_index] -> eid(SMESH Elem ID for EDGE)
+        #    mesh.GetElemNodes(eid) -> [nid1, nid2]
+        def _edge_list_for_group(gname: str):
+            e_globs = edge_groups.get(gname, []) or []
+            out = []
+            for ge in e_globs:
+                if 0 <= ge < len(edge_ids):
+                    eid = edge_ids[ge]
+                    nids = mesh.GetElemNodes(eid)  # [nid1, nid2] (1-베이스)
+                    if len(nids) == 2:
+                        out.append([int(nids[0]), int(nids[1])])
+            return out
+
+        lines_floater_all = _edge_list_for_group("floater")
+        lines_netting_all = _edge_list_for_group("net twine")
+        lines_braket_all  = _edge_list_for_group("bracket")   # ← bracket 그룹을 Line_braket로
+
+        # 3) Lines_pipe_top: floater 중 z≈z_float인 것만
+        def _approx(a, b, tol=1e-6): return abs(a - b) <= tol
+        lines_pipe_top = []
+        for a_med, b_med in lines_floater_all:
+            za = coords_by_med[a_med][2]; zb = coords_by_med[b_med][2]
+            if _approx(za, z_float) and _approx(zb, z_float):
+                lines_pipe_top.append([a_med, b_med])
+
+        # 4) surfs_netting(0-베이스 글로벌 인덱스) → MED 노드 번호로 매핑
+        #    주의: net_points.json의 points 추가가 export_med의 노드 추가와 동일 순서이므로
+        #          "글로벌 0-베이스 인덱스 i" -> "node_ids[i] (MED Node ID)" 로 매핑 가능.
+        surfs_med = []
+        for face in surfs_from_net:
+            # face는 [i,j,k,(l)] 형태의 0-베이스 글로벌 인덱스
+            try:
+                surfs_med.append([int(node_ids[int(i)]) for i in face])
+            except Exception:
+                # 범위를 벗어나는 인덱스가 있으면 스킵
+                pass
+
+        # 5) Nodes: MED 노드 번호 순서로 좌표 정리(키 정렬)
+        med_ids_sorted = sorted(coords_by_med.keys())
+        nodes_xyz_by_med = [[coords_by_med[n][0], coords_by_med[n][1], coords_by_med[n][2]]
+                            for n in med_ids_sorted]
+
+        # 6) meshinfo 구성 및 저장
+        meshinfo = {
+            "Lines_pipe_top": lines_pipe_top,
+            "numberOfLines_pipe_top": len(lines_pipe_top),
+
+            "Lines_netting": lines_netting_all,
+            "numberOfLines_netting": len(lines_netting_all),
+
+            "Line_braket": lines_braket_all,                    
+            "numberOfLine_braket": len(lines_braket_all),       
+
+            "surfs_netting": surfs_med,
+            "numberOfsurfs_netting": len(surfs_med),
+
+            "Nodes": nodes_xyz_by_med,
+            "MED_node_ids": med_ids_sorted  # ← 원한다면 남겨두면 디버깅에 유용
+        }
+
+        out_meshinfo = os.path.join(BASE_DIR, "saves", "meshinfo.json")
+        with open(out_meshinfo, "w", encoding="utf-8") as f:
+            json.dump(meshinfo, f, indent=2, ensure_ascii=False)
+
+        print(f"✅ meshinfo.json (MED numbering) saved: {out_meshinfo}")
+    except Exception as e:
+        print(f"⚠️ meshinfo.json (MED numbering) skipped: {e}")
+
     return outpath
 
 if __name__ == "__main__":
