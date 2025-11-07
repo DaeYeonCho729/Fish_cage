@@ -9,12 +9,15 @@ row_water = 1025.0  # [kg/m3]   물 밀도
 gravity = 9.81
 
 class ScreenModel:
-    def __init__(self, mesh_elements, Sn, dw, rho,):
+    def __init__(self, mesh_elements, Sn, dw, rho, lines_netting = None):
         self.two_elemnets = []
         self.dw = dw # 실제 그물발의 직경
         self.rho = rho # 재료밀도
         self.sn = Sn # 공극률 (잊지말고 meshinfo에 추가해야함)
         self.index = list(mesh_elements)
+
+        self.triangular_elements = []
+        self._quad_of_sub = []
 
         # 0-based 원본 패널 저장
         converted_index = []
@@ -24,19 +27,71 @@ class ScreenModel:
             converted_index.append([k-1 for k in uniq])
         self.original_elements_0b = converted_index  # e.g., [[0,1,2],[2,3,4,5]]
 
+        # ✅ Lines_netting을 이용해 4코너 순서 자동 정렬
+        self._edges = None
+        if lines_netting:
+            es = set()
+            for e in lines_netting:
+                if len(e) != 2:
+                    continue
+                i, j = e[0] - 1, e[1] - 1
+                if i == j:
+                    continue
+                es.add((i, j) if i < j else (j, i))
+            self._edges = es
+
+        # ✅ 기존 패널 분해 로직 (단, 순서 정렬 추가)
         for panel in self.original_elements_0b:
             if len(panel) <= 3:
                 self.triangular_elements.append(panel)
                 self._quad_of_sub.append(None)
             elif len(panel) == 4:
-                a, b, c, d = panel
-                # -1: 가상 중앙점 임시로 설정
-                self.triangular_elements += [[a, b, -1], [b, c, -1], [c, d, -1], [d, a, -1]]
+                ordered = self._order_quad_with_edges(panel)
+                if ordered is None:
+                    ordered = panel  # fallback (Lines_netting이 없을 경우)
+                a, b, c, d = ordered
+                self.triangular_elements += [
+                    [a, b, -1],
+                    [b, c, -1],
+                    [c, d, -1],
+                    [d, a, -1],
+                ]
                 self._quad_of_sub += [[a, b, c, d]] * 4
 
         self.hydro_dynamic_forces = np.zeros((len(self.triangular_elements), 3)) #힘 배열준비 [Fx1, Fy1, Fz1], [Fx2, Fy2, Fz2], ...
         self.hydro_z_forces = np.zeros((len(self.triangular_elements), 3))
-        self.hydro_total_forces = np.zeors((len(self.triangular_elements), 3))
+        self.hydro_total_forces = np.zeros((len(self.triangular_elements), 3))
+
+    # -----------------------------------------------------------
+    #  Lines_netting 기반 정렬 함수 
+    # -----------------------------------------------------------
+    def _order_quad_with_edges(self, nodes4):
+        if self._edges is None:
+            return None
+
+        # 각 노드의 연결 정보
+        nbr = {u: set() for u in nodes4}
+        for i in range(4):
+            for j in range(i + 1, 4):
+                u, v = nodes4[i], nodes4[j]
+                key = (u, v) if u < v else (v, u)
+                if key in self._edges:
+                    nbr[u].add(v)
+                    nbr[v].add(u)
+
+        # 연결 불완전 시 실패
+        if any(len(nbr[u]) != 2 for u in nodes4):
+            return None
+
+        # 둘레 순회 (연결 따라 돌기)
+        start = nodes4[0]
+        order = [start]
+        prev, cur = None, start
+        for _ in range(3):
+            nxt = [n for n in nbr[cur] if n != prev][0]
+            order.append(nxt)
+            prev, cur = cur, nxt
+        return order
 
     def _resolve_triangle_points(self, tri, node_position, idx):
         """
@@ -67,7 +122,6 @@ class ScreenModel:
         
         coin_alpha = np.dot(unit_normal_vector, fluid_velocity) / np.linalg.norm(fluid_velocity) # 두 사이 각 구하기 ()
         inflow_angle = np.arccos(coin_alpha)        
-
         drag_coefficient, lift_coefficient = 0, 0 # 초기화 
 
         drag_coefficient = 0.04 + (
@@ -86,7 +140,7 @@ class ScreenModel:
         force_on_element = np.zeros((num_element, 3))
         eps = np.finfo(np.float64).eps
 
-        # 🔹 (NEW) 사각형별 중앙점 속도 캐시: key = (a,b,c,d)  → value = v_center (R^3)
+        # 사각형별 중앙점 속도 캐시: key = (a,b,c,d)  → value = v_center (R^3)
         quad_center_vel = {}
 
         for idx, tri in enumerate(self.triangular_elements):
@@ -141,7 +195,7 @@ class ScreenModel:
             # 6) 요소 힘
             FD = FD_mag * drag_dir
             FL = FL_mag * lift_dir
-            force_on_element[idx] = (FD + FL) / 2.0  # Cheng 스케일 유지
+            force_on_element[idx] = (FD + FL)
 
         # 7) 상태 업데이트
         self.hydro_dynamic_forces = force_on_element
@@ -225,13 +279,13 @@ class ScreenModel:
             f = elem_forces[idx]
             i, j, k = tri
             if k != -1:
-                # 3개 꼭짓점 균등 분배
+                # 원래 삼각형인 그물코
                 share = f / 3.0
                 if 0 <= i < N: node_forces[i] += share
                 if 0 <= j < N: node_forces[j] += share
                 if 0 <= k < N: node_forces[k] += share
             else:
-                # sub-tri: 실제 두 노드에 1/2씩
+                # 4등분한 그물코의 두 노드에 힘을 분배
                 share = f / 2.0
                 if 0 <= i < N: node_forces[i] += share
                 if 0 <= j < N: node_forces[j] += share
@@ -239,8 +293,29 @@ class ScreenModel:
 
         return node_forces
 
-
-
 if __name__ == "__main__":
-    pass
 
+    node_position = np.array([
+        [0.0, 1.0, 0.0],  # Node 0
+        [0.0, 0.0, 0.0],  # Node 1
+        [0.7071, 1.0, -0.7071],  # Node 2
+        [0.7071, 0.0, -0.7071],  # Node 3
+    ])
+
+    lines_netting = [[1,2],[2,4],[4,3],[3,1]]  # 1-based, 테두리 엣지
+
+    surfs_netting = [[1, 2, 3, 4]]  # 1-based
+
+    screen = ScreenModel(surfs_netting, Sn=0.3, dw=0.002, rho=1140.0, lines_netting=lines_netting)
+
+    velocity_fluid = np.tile(np.array([1.0, 0.0, 0.0]), (len(screen.triangular_elements), 1))
+
+    # ✅ 구조속도는 0으로 가정
+    velocity_structure = np.zeros_like(node_position)
+
+    # ✅ 수면고 (z=0.5m)
+    elevation = np.full((len(node_position), 3), [0, 0, 0.5])
+
+    # ✅ 동유체력 계산
+    f_dyn = screen.force_on_element(node_position, velocity_fluid, velocity_structure, elevation)
+    print("\n[동유체력(Drag+Lift) per element]\n", f_dyn)
