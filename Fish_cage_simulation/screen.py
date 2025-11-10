@@ -205,59 +205,59 @@ class ScreenModel:
 
     def cal_buoy_force(self, node_position, elevation):
         """
-        요소별 정수압(부력) 힘을 계산해 self.hydro_z_forces에 저장하고 반환.
-        - 요소 중심 z < 수면 z 일 때만 작용 (아니면 0)
-        - 압력 p = rho_water * g * depth  (depth = elev_z - z_center)
-        - 힘 = p * area * n_hat  (n_hat의 z성분이 음수면 뒤집어 위(+z) 성분이 되도록)
+        elevation: np.array shape (N,) or (N,3) 모두 지원
         """
         num_element = len(self.triangular_elements)
-        buoy_forces = np.zeros((num_element, 3), dtype=float)
+        force_on_element = np.zeros((num_element, 3))
+        eps = np.finfo(np.float64).eps
 
-        if elevation is None:
-            # 수면 정보 없으면 부력 0 (필요 시 상수 수면을 넘기세요)
-            self.hydro_z_forces = buoy_forces
-            # total은 동유체력만 유지
-            self.hydro_total_forces = getattr(self, "hydro_dynamic_forces", np.zeros_like(buoy_forces))
-            return buoy_forces
+        def _elev_z(elev, idx):
+            """elevation[idx]에서 z 성분/스칼라 높이 추출"""
+            v = elev[int(idx)]
+            v = np.asarray(v)
+            if v.ndim == 0:
+                return float(v)
+            return float(v[2] if v.size >= 3 else v.item())
 
-        for idx, tri in enumerate(self.triangular_elements):
-            # 요소 좌표
-            p1, p2, p3 = self._resolve_triangle_points(tri, node_position, idx)
-            # 요소 면적과 법선(속도와 무관하게 기하로 계산)
-            a1 = p2 - p3
-            a2 = p1 - p3
-            cross = np.cross(a1, a2)
-            area = 0.5 * (np.linalg.norm(cross) + np.finfo(np.float64).eps)
-            n_hat = cross / (2.0 * area)  # 단위법선 (cross/(||cross||))
-            # 위쪽(+z)으로 작용하도록 법선 정방향 선택
-            if n_hat[2] < 0.0:
-                n_hat = -n_hat
+        def _submerge_ratio(zvals):
+            # 물속(>0)=1, 수면(=0)=0.5, 공기(<0)=0
+            zvals = np.asarray(zvals, dtype=float)
+            r = ((zvals > 0).astype(float) + 0.5 * (np.abs(zvals) <= eps).astype(float)).mean()
+            return max(0.0, min(1.0, float(r)))
 
-            # 요소 중심 z
-            elem_center = (p1 + p2 + p3) / 3.0
+        for index, tri in enumerate(self.triangular_elements):
+            # 1) 좌표
+            p1, p2, p3 = self._resolve_triangle_points(tri, node_position, index)
 
-            # 요소 주변 수면고(z) 산정 (동유체력 블록과 동일 규칙)
-            if tri[2] != -1:
-                elev_vec = (elevation[tri[0]] + elevation[tri[1]] + elevation[tri[2]]) / 3.0
+            # 2) 면적 및 체적
+            element_area = self.hydro_coefficients(p1, p2, p3, np.array([1, 0, 0]))[0]
+            element_volume = element_area * self.sn * self.dw * 0.25 * pi
+
+            # 3) 수면고 z 추출 (중앙점이면 4 코너 평균)
+            i, j, k = tri
+            if k != -1:
+                e0 = _elev_z(elevation, i)
+                e1 = _elev_z(elevation, j)
+                e2 = _elev_z(elevation, k)
             else:
-                a, b, c, d = self._quad_of_sub[idx]
-                elev_center = (elevation[a] + elevation[b] + elevation[c] + elevation[d]) / 4.0
-                elev_vec = (elevation[tri[0]] + elevation[tri[1]] + elev_center) / 3.0
+                a, b, c, d = self._quad_of_sub[index]
+                e_center = (_elev_z(elevation, a) + _elev_z(elevation, b) +
+                            _elev_z(elevation, c) + _elev_z(elevation, d)) / 4.0
+                e0 = _elev_z(elevation, i)
+                e1 = _elev_z(elevation, j)
+                e2 = e_center
 
-            elev_z = elev_vec[2] if (np.ndim(elev_vec) >= 1 and len(np.atleast_1d(elev_vec)) >= 3) else float(elev_vec)
+            # 4) 잠김 비율 평가 (elev_z - node_z)
+            z_rel = [e0 - p1[2], e1 - p2[2], e2 - p3[2]]
+            ratio_water = _submerge_ratio(z_rel)
 
-            # 수면 아래만 정수압 작용
-            depth = elev_z - float(elem_center[2])
-            if depth > 0.0 and area > 0.0:
-                p = row_water * gravity * depth  # 정수압
-                buoy_forces[idx] = p * area * n_hat  # 요소 부력 벡터
+            # 5) 유체 밀도 보간 및 부력
+            rho_fluid = row_air * (1 - ratio_water) + row_water * ratio_water
+            Fz = element_volume * gravity * (rho_fluid)
+            force_on_element[index] = np.array([0.0, 0.0, Fz])
 
-        self.hydro_z_forces = buoy_forces
-
-        # 총합력 업데이트(동유체력 + 정수압)
-        dyn = getattr(self, "hydro_dynamic_forces", np.zeros_like(buoy_forces))
-        self.hydro_total_forces = dyn + buoy_forces
-        return buoy_forces
+        self.hydro_static_forces = force_on_element
+        return force_on_element
 
 
     def distribute_force(self, number_of_node):
@@ -315,6 +315,10 @@ if __name__ == "__main__":
 
     # ✅ 수면고 (z=0.5m)
     elevation = np.full((len(node_position), 3), [0, 0, 0.5])
+
+    # ✅ 부력 계산
+    f_buoy = screen.cal_buoy_force(node_position, elevation)
+    print("\n[부력 per element]\n", f_buoy)
 
     # ✅ 동유체력 계산
     f_dyn = screen.force_on_element(node_position, velocity_fluid, velocity_structure, elevation)
