@@ -1,0 +1,21 @@
+P rep_trav C:/temp_aster
+P actions make_etude
+P info 0
+P mode interactif
+P ncpus 8
+P time_limit 99999999.0
+A memjeveux 163840.0
+
+F mess aster.mess R 6
+F resu reactionforce.txt R  10
+F rmed result.med R  80
+F xdmf result.xdmf R  82
+
+F comm aster_simulation1.py D  1
+F mmed fish_cage.unv D  20
+F libr meshinfo.py D  90
+F libr materials.py D  91
+F libr aster_simulation2.py D  93
+
+
+

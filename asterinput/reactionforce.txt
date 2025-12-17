@@ -1,0 +1,7 @@
+#
+#--------------------------------------------------------------------------------
+##ASTER 17.02.18 CONCEPT 0000ea6f CALCULE LE 12/12/2025 A 18:50:23 DE TYPE        
+INTITULE         RESU     NOM_CHAM          NUME_ORDRE    INST          RESULT_X      RESULT_Y      RESULT_Z      MOMENT_X      MOMENT_Y      MOMENT_Z    
+sum reactions    0000ea6e REAC_NODA                    0     1.500E+01    -5.188E+05    -5.487E+02     1.233E+06     5.863E+03    -1.545E+05     6.836E+03
+sum reactions    0000ea6e REAC_NODA                    1     1.500E+01    -5.188E+05    -5.486E+02     1.233E+06     5.914E+03    -1.545E+05     6.861E+03
+
