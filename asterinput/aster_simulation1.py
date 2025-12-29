@@ -203,12 +203,12 @@ stat2 = CALC_CHAMP(
     CONTRAINTE=('EFGE_ELGA', 'EFGE_ELNO'),
 )
 
- #reaction force 
-stat3 = CALC_CHAMP(RESULTAT=resn,
-                  CONTRAINTE=('SIEF_ELNO',
-                              ),
-                  FORCE=('REAC_NODA', ),
-                  )
+#  #reaction force 
+# stat3 = CALC_CHAMP(RESULTAT=resn,
+#                   CONTRAINTE=('SIEF_ELNO',
+#                               ),
+#                   FORCE=('REAC_NODA', ),
+#                   )
 
 IMPR_RESU(
     FORMAT='MED',
@@ -237,23 +237,24 @@ IMPR_RESU(
 )
 
 
-reac1 = POST_RELEVE_T(
-    ACTION=_F(
-        GROUP_NO=('FLONODE',),  # floater node → FLONODE
-        INTITULE='sum reactions',
-        MOMENT=('DRX', 'DRY', 'DRZ'),
-        NOM_CHAM=('REAC_NODA',),
-        OPERATION=('EXTRACTION',),
-        POINT=(0.0, 0.0, 0.0),
-        RESULTANTE=('DX', 'DY', 'DZ'),
-        RESULTAT=stat3,
-    )
-)                         
+# reac1 = POST_RELEVE_T(
+#     ACTION=_F(
+#         GROUP_NO=('FLONODE',),  # floater node  FLONODE
+#         INTITULE='sum reactions',
+#         MOMENT=('DRX', 'DRY', 'DRZ'),
+#         NOM_CHAM=('REAC_NODA',),
+#         OPERATION=('EXTRACTION',),
+#         POINT=(0.0, 0.0, 0.0),
+#         RESULTANTE=('DX', 'DY', 'DZ'),
+#         LIST_INST=listr,     
+#         RESULTAT=stat3,
+#     )
+# )                         
 
 
-IMPR_TABLE(FORMAT_R='1PE12.3',
-           TABLE=reac1,
-           UNITE=10)                    
+# IMPR_TABLE(FORMAT_R='1PE12.3',
+#            TABLE=reac1,
+#            UNITE=10)                    
 
 
 FIN()

@@ -26,3 +26,12 @@ def get_displace_vector(table_aster):
     delta_y = content.values()['DY']
     delta_z = content.values()['DZ']
     return np.mean(np.transpose(np.array([delta_x, delta_y, delta_z])),axis=0)
+
+def get_N_aster(table_aster):
+    content = table_aster.EXTR_TABLE()
+    # N = content.values()['N']
+    N_x = content.values()['DX']
+    N_y = content.values()['DY']
+    N_z = content.values()['DZ']
+    N = np.array([N_x, N_y, N_z])
+    return np.transpose(N)

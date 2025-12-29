@@ -8,6 +8,7 @@ A memjeveux 163840.0
 
 F mess aster.mess R 6
 F resu reactionforce.txt R  10
+F resu elementforce.txt R  11
 F rmed result.med R  80
 F xdmf result.xdmf R  82
 
