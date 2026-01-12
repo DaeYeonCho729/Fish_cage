@@ -29,9 +29,9 @@ def get_displace_vector(table_aster):
 
 def get_N_aster(table_aster):
     content = table_aster.EXTR_TABLE()
-    # N = content.values()['N']
-    N_x = content.values()['DX']
-    N_y = content.values()['DY']
-    N_z = content.values()['DZ']
-    N = np.array([N_x, N_y, N_z])
+    N = content.values()['N']
+    # N_x = content.values()['DX']
+    # N_y = content.values()['DY']
+    # N_z = content.values()['DZ']
+    # N = np.array([N_x, N_y, N_z])
     return np.transpose(N)

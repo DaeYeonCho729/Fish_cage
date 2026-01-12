@@ -79,7 +79,7 @@ elemprop = AFFE_CARA_ELEM(
     CABLE=_F(
         GROUP_MA=('NETTWIN',),
         N_INIT=10.0,
-        SECTION=0.25 * np.pi * pow(materials["Net"]["twine_dia"] * 12 , 2) # need dwe 
+        SECTION=0.25 * np.pi * pow(materials["Net"]["twine_dia"] * 10 , 2) # need dwe 
     ),
     POUTRE=(
         _F(

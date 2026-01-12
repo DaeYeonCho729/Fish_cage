@@ -208,16 +208,16 @@ if k % save_step == 0:
     )
 
 
-    # stat_load = CALC_CHAMP(
-    #     RESULTAT=resn,
-    #     FORCE='FORC_NODA', 
-    #     INST=inst_now,
-    # )
+#     # stat_load = CALC_CHAMP(
+#     #     RESULTAT=resn,
+#     #     FORCE='FORC_NODA', 
+#     #     INST=inst_now,
+#     # )
 
-    # stat3 = CALC_CHAMP(
-    #     RESULTAT=resn,
-    #     FORCE='REAC_NODA',
-    # )
+#     # stat3 = CALC_CHAMP(
+#     #     RESULTAT=resn,
+#     #     FORCE='REAC_NODA',
+#     # )
 
     reac1 = POST_RELEVE_T(
         ACTION=_F(
@@ -257,12 +257,12 @@ if k % save_step == 0:
 
     n = aster_module.get_N_aster(reac1)
 
-    n = aster_module.get_N_aster(node_loads)
+    # # n = aster_module.get_N_aster(node_loads)
 
-    # IMPR_TABLE(FORMAT_R='1PE12.3',
-    #         TABLE=reac3,
-    #         UNITE=10,
-    # )
+    # # IMPR_TABLE(FORMAT_R='1PE12.3',
+    # #         TABLE=reac3,
+    # #         UNITE=10,
+    # # )
 
     np.savetxt(os.path.join(cwd, 'pythonOutput/N/N_' +
                             str(round((k)*dt, 3))+'.txt'), n, fmt='%.3e')

@@ -529,6 +529,7 @@ def export_all_to_med(outpath="fish_cage.unv"):
         lines_floater_all = _edge_list_for_group("floater")
         lines_netting_all = _edge_list_for_group("net twine")
         lines_braket_all  = _edge_list_for_group("bracket")  # meshinfo 키는 Line_braket로 저장
+        lines_bottom_ring = _edge_list_for_group("bottom ring")
 
         # 3) Lines_pipe_top: floater 중 z≈z_float인 것만
         def _approx(a, b, tol=1e-6): return abs(a - b) <= tol
@@ -561,6 +562,10 @@ def export_all_to_med(outpath="fish_cage.unv"):
 
             "Line_braket": lines_braket_all,
             "numberOfLine_braket": len(lines_braket_all),
+
+            # ✅ bottom ring (bracket과 동일 패턴)
+            "Lines_bottom_ring": lines_bottom_ring,
+            "numberOfLines_bottom_ring": len(lines_bottom_ring),
 
             "surfs_netting": surfs_med,
             "numberOfsurfs_netting": len(surfs_med),

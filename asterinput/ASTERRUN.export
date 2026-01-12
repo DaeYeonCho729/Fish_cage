@@ -4,7 +4,7 @@ P info 0
 P mode interactif
 P ncpus 8
 P time_limit 99999999.0
-A memjeveux 163840.0
+A memjeveux 25000
 
 F mess aster.mess R 6
 F resu reactionforce.txt R  10

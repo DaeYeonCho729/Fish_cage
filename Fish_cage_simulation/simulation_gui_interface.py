@@ -639,8 +639,8 @@ class MainWindow(QMainWindow):
         for le in (self.in_dt, self.in_duration, self.in_curr_x, self.in_curr_y, self.in_curr_z):
             le.setValidator(_dv_env); le.setAlignment(Qt.AlignRight)
 
-        env_form.addRow("dt", self.in_dt)
-        env_form.addRow("duration", self.in_duration)
+        env_form.addRow("time step", self.in_dt)
+        env_form.addRow("total time", self.in_duration)
         env_form.addRow("current x", self.in_curr_x)
         env_form.addRow("current y", self.in_curr_y)
         env_form.addRow("current z", self.in_curr_z)
@@ -666,9 +666,9 @@ class MainWindow(QMainWindow):
         self.in_d.setPlaceholderText("0")
         self.in_d.textChanged.connect(lambda text, line=self.in_d: self._format_with_comma(line, text))
 
-        form.addRow("E (Pa)", self.in_E)
-        form.addRow("rho (kg/m³)", self.in_rho)
-        form.addRow("d (m)", self.in_d)
+        form.addRow("Young's modulus (Pa)", self.in_E)
+        form.addRow("Density (kg/m³)", self.in_rho)
+        form.addRow("Diameter (m)", self.in_d)
 
 
 
@@ -710,7 +710,7 @@ class MainWindow(QMainWindow):
         self.chk_bottom_net_center.toggled.connect(
             lambda checked: self.in_bottom_net_weight.setEnabled(checked)
         )
-        net_form.addRow("Bottom net weight", self.in_bottom_net_weight)
+        net_form.addRow("weight", self.in_bottom_net_weight)
         self.grp_net.setEnabled(False)
         form.addRow(self.grp_net)
 
@@ -844,7 +844,11 @@ class MainWindow(QMainWindow):
                     "twine_dia": n.get("twine_dia"),
                     "Mesh_length": n.get("Mesh_length"),
                     "bottom_net_center": bool(self.chk_bottom_net_center.isChecked()),
-                    "BottomNet_cen_weight": n.get("BottomNet_cen_weight"),
+                    "BottomNet_cen_weight": (
+                        n.get("BottomNet_cen_weight") * 9.8
+                        if self.chk_bottom_net_center.isChecked() and n.get("BottomNet_cen_weight") is not None
+                        else 0.0
+                    ),
                     "Sn": Sn,   # 🔥 여기 추가: D, L로부터 계산된 Sn
                 }
             if "bottom ring" in st:
