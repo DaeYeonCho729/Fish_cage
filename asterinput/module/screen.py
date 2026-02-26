@@ -9,29 +9,37 @@ row_water = 1025.0  # [kg/m3]   물 밀도
 gravity = 9.81
 
 class ScreenModel:
-    def __init__(self, mesh_elements, Sn, dw, rho, lines_netting = None, wake_origin = None,node_ids=None):
+    def __init__(self,rr, mesh_elements, Sn, dw, rho, lines_netting = None, wake_origin = None, node_ids=None):
 
         self.python_to_med = None
         if node_ids is not None:
             self.python_to_med = node_ids[:]  # copy 저장
-
+        self.triangular_elements = []
+        self._quad_of_sub = []  
+        self.rr = rr
         self.two_elemnets = []
         self.dw = dw # 실제 그물발의 직경
+        self.dr = dw * rr # 보간 직경
         self.rho = rho # 재료밀도
         self.sn = Sn # 공극률 (잊지말고 meshinfo에 추가해야함)
-        self.index = list(mesh_elements)
-
-        self.triangular_elements = []
-        self._quad_of_sub = []
-
-        # 0-based 원본 패널 저장
+        # mesh_elements 처리하여 original_elements_0b와 태그 분리
         converted_index = []
+        self._net_tags = []
         for item in mesh_elements:
-            # 중복 제거 + 1-based → 0-based
-            uniq = [int(k) for k in dict.fromkeys(item)]  # 순서 유지 dedup
-            converted_index.append([k-1 for k in uniq])
-        self.original_elements_0b = converted_index  # e.g., [[0,1,2],[2,3,4,5]]
-
+            if item and isinstance(item[-1], str):
+                tag = item[-1]             # 태그 분리
+                nodes = item[:-1]
+            else:
+                tag = None
+                nodes = item
+            # 중복 제거 및 1-베이스→0-베이스 변환
+            uniq_nodes = [int(k) for k in dict.fromkeys(nodes)]
+            converted_index.append([k - 1 for k in uniq_nodes])
+            self._net_tags.append(tag)    # 각 패널의 태그 저장 (태그 없으면 None)
+        self.original_elements_0b = converted_index
+        self._tag_map = {frozenset(panel): (self._net_tags[i] if i < len(self._net_tags) else None)
+                         for i, panel in enumerate(self.original_elements_0b)}
+        
         # ✅ Lines_netting을 이용해 4코너 순서 자동 정렬
         self._edges = None
         if lines_netting:
@@ -177,8 +185,10 @@ class ScreenModel:
             np.cross(np.cross(fluid_velocity, unit_normal_vector), fluid_velocity) + eps) # U는
         drag_vector = fluid_velocity / np.linalg.norm(fluid_velocity)
         
-        coin_alpha = np.dot(unit_normal_vector, fluid_velocity) / np.linalg.norm(fluid_velocity) # 두 사이 각 구하기 ()
-        inflow_angle = np.arccos(coin_alpha)        
+        attack_angle_deg = np.dot(unit_normal_vector, fluid_velocity) / np.linalg.norm(fluid_velocity) # 두 사이 각 구하기 ()
+        attack_angle = np.arccos(attack_angle_deg)   #라디안    
+        inflow_angle = (pi/2) - attack_angle #라디안
+
         drag_coefficient, lift_coefficient = 0, 0 # 초기화 
 
         drag_coefficient = 0.04 + (
@@ -197,7 +207,7 @@ class ScreenModel:
         force_on_element = np.zeros((num_element, 3))
         eps = np.finfo(np.float64).eps
 
-        # 사각형별 중앙점 속도 캐시: key = (a,b,c,d)  → value = v_center (R^3)
+        # 사각형별 중앙점 속도 저장
         quad_center_vel = {}
 
         for idx, tri in enumerate(self.triangular_elements):
@@ -290,7 +300,20 @@ class ScreenModel:
 
             # 2) 면적 및 체적
             element_area = self.hydro_coefficients(p1, p2, p3, np.array([1, 0, 0]), tri_nodes=tri)[0]
-            element_volume = element_area * self.sn * self.dw * 0.25 * pi
+            tag = None
+            if self._net_tags:  # 태그 정보가 있을 경우에만 처리
+                if tri[2] == -1:
+                    # 사각 패널에서 생성된 sub-triangle인 경우, 원본 4코너 셋으로 태그 결정
+                    tag = self._tag_map.get(frozenset(self._quad_of_sub[index]), None)
+                else:
+                    # 원본이 삼각 패널인 경우, 해당 삼각형 노드 셋으로 태그 결정
+                    tag = self._tag_map.get(frozenset(tri), None)
+                    
+            # 태그에 따라 부력 계산에 사용할 직경 선택 ('b'이면 dw, 그 외는 dr)
+            if tag == 'b':
+                element_volume = element_area * self.sn * self.dw * 0.25 * pi
+            else:
+                element_volume = element_area * self.sn * self.dr * 0.25 * pi
 
             # 3) 수면고 z 추출 (중앙점이면 4 코너 평균)
             i, j, k = tri
@@ -312,7 +335,7 @@ class ScreenModel:
 
             # 5) 유체 밀도 보간 및 부력
             rho_fluid = row_air * (1 - ratio_water) + row_water * ratio_water
-            Fz = element_volume * gravity * (rho_fluid)
+            Fz = element_volume * gravity * (rho_fluid - self.rho)
             force_on_element[index] = np.array([0.0, 0.0, Fz])
 
         self.hydro_static_forces = force_on_element

@@ -99,6 +99,9 @@ class MooringRigWindow(QDialog):
         self.in_anchor_down = QLineEdit("15.0")
         self.in_azimuth_deg = QLineEdit("")
         self.anchor_incl_deg = QLineEdit("45")
+        self.in_add_buoyline = QLineEdit("0")   # BUOY_LINE
+        self.in_add_anchor_a = QLineEdit("0")   # ANCHOR_LINE_A
+        self.in_add_anchor_b = QLineEdit("0")   # ANCHOR_LINE_B
         self.anchor_incl_deg.setValidator(QDoubleValidator(0.0, 89.9, 1))
         self.anchor_incl_deg.setToolTip("수직 기준 각도 (0°=수직, 90°=수평)")
 
@@ -108,6 +111,7 @@ class MooringRigWindow(QDialog):
         self.cb_buoy2.setChecked(False)
         hb_b2.addWidget(self.in_buoyline_up); hb_b2.addWidget(self.cb_buoy2)
         form.addRow(QLabel("Buoy 2 (m)"), row_b2)
+        form.addRow(QLabel("Add nodes: Buoy line"), self.in_add_buoyline)
 
         form.addRow(QLabel("Distance rope length (m)"), self.in_dist_len)
         form.addRow(QLabel("Anchor-line down (m)"), self.in_anchor_down)
@@ -120,6 +124,8 @@ class MooringRigWindow(QDialog):
         form.addRow(QLabel("Anchor split (A:B)"), w_ab)
 
         form.addRow(QLabel("Azimuth (deg, optional)"), self.in_azimuth_deg)
+        form.addRow(QLabel("Add nodes: Anchor line A"), self.in_add_anchor_a)
+        form.addRow(QLabel("Add nodes: Anchor line B"), self.in_add_anchor_b)
 
         # ▼ UniversalLinkWindow처럼 Add / List / Delete
         self.btn_add = QPushButton("Add")
@@ -384,28 +390,49 @@ class MooringRigWindow(QDialog):
 
         # 2) Buoy2 없는 형식: DISTANCE_ROPE가 없으면 폴백 시도
         if not restored and not by_group.get("DISTANCE_ROPE"):
+
+            def _endpoints(pl):
+                ns = [int(x) for x in (pl.get("nodes", []) or [])]
+                if len(ns) < 2:
+                    return None
+                return ns[0], ns[-1]   # ✅ polyline이면 끝점만 사용
+
             for ala in by_group.get("ANCHOR_LINE_A", []):
-                na0, na1 = map(int, ala["nodes"])
+                ep = _endpoints(ala)
+                if ep is None:
+                    continue
+                na0, na1 = ep
+
                 # base gidx(<baseN) ↔ split(>=baseN) 구조만 수용
                 if   na0 < baseN and na1 >= baseN: gidx, i_anchor_sp = na0, na1
                 elif na1 < baseN and na0 >= baseN: gidx, i_anchor_sp = na1, na0
-                else: continue
+                else:
+                    continue
 
-                # 대응하는 B 찾기 (split 공유)
+                # 대응하는 B 찾기 (split 공유)  ✅ B도 endpoints로 처리
                 i_anchor_bot = None
                 for alb in by_group.get("ANCHOR_LINE_B", []):
-                    nb0, nb1 = map(int, alb["nodes"])
+                    epb = _endpoints(alb)
+                    if epb is None:
+                        continue
+                    nb0, nb1 = epb
+
                     if   nb0 == i_anchor_sp and nb1 >= baseN: i_anchor_bot = nb1; break
                     elif nb1 == i_anchor_sp and nb0 >= baseN: i_anchor_bot = nb0; break
+
                 if i_anchor_bot is None:
                     continue
 
-                # base에 매단 부이(1) 찾기
+                # base에 매단 부이(1) 찾기 ✅ BUOY_TETHER도 endpoints로 처리
                 i_buoy = None
                 for pl in by_group.get("BUOY_TETHER", []):
-                    n0, n1 = map(int, pl["nodes"])
+                    ept = _endpoints(pl)
+                    if ept is None:
+                        continue
+                    n0, n1 = ept
                     if   n0 == gidx and n1 >= baseN: i_buoy = n1; break
                     elif n1 == gidx and n0 >= baseN: i_buoy = n0; break
+
                 if i_buoy is None:
                     continue
 
@@ -445,8 +472,9 @@ class MooringRigWindow(QDialog):
                     "anchor_a": int(a_int),
                     "anchor_b": int(b_int),
                     "anchor_incl_deg": float(anchor_incl_deg),
-                    "use_buoy2": False,      # ← Buoy2 없음 명확히 지정
+                    "use_buoy2": False,
                 })
+
 
         if not restored:
             return
@@ -536,6 +564,10 @@ class MooringRigWindow(QDialog):
         dist_len    = float(self.in_dist_len.text())
         buoyline_up = float(self.in_buoyline_up.text())
         anchor_down = float(self.in_anchor_down.text())
+        
+        add_buoyline = int(self.in_add_buoyline.text())
+        add_anch_a   = int(self.in_add_anchor_a.text())
+        add_anch_b   = int(self.in_add_anchor_b.text())
         az_text = self.in_azimuth_deg.text().strip()
         azimuth_deg = float(az_text) if az_text else None
         try:
@@ -549,8 +581,11 @@ class MooringRigWindow(QDialog):
             "buoyline_up": buoyline_up, "anchor_down": anchor_down,
             "azimuth_deg": azimuth_deg,
             "anchor_a": a, "anchor_b": b,
-            "anchor_incl_deg": self._get_anchor_incl_deg(),\
-            "use_buoy2": bool(getattr(self, "cb_buoy2", None) and self.cb_buoy2.isChecked())
+            "anchor_incl_deg": self._get_anchor_incl_deg(),
+            "use_buoy2": bool(getattr(self, "cb_buoy2", None) and self.cb_buoy2.isChecked()),
+            "add_buoyline": add_buoyline,
+            "add_anchor_a": add_anch_a,
+            "add_anchor_b": add_anch_b
         }
 
     def _preview_segments_for_item(self, it):
@@ -769,14 +804,39 @@ class MooringRigWindow(QDialog):
         gidx = self.node_combo.currentData()
         if gidx is None:
             return
-        it = self._collect_item(int(gidx))         # ← 파라미터 스냅샷
-        self.items.append(it)                       # ← 같은 노드도 여러 번 허용
-        # 리스트 표시: gidx와 파라미터 요약
-        label = (f"{it['gidx']} | bu:{it['buoy_up']}  dist:{it['dist_len']}  "
-                f"top:{it['buoyline_up']}  anc:{it['anchor_down']}  "
-                f"az:{it['azimuth_deg'] if it['azimuth_deg'] is not None else 'radial'}  "
-                f"A:B={it['anchor_a']}:{it['anchor_b']}")
-        self.sel_list.addItem(label)
+        it = self._collect_item(int(gidx))
+
+        # ✅ "같은 gidx"라도 azimuth가 다르면 다른 세트로 추가되게 한다.
+        # - azimuth_deg가 None이면 radial 기본으로 보고 None을 키로 사용
+        def _key(x):
+            az = x.get("azimuth_deg", None)
+            # float 비교 안전하게(입력 오차 방지)
+            az_key = None if az is None else round(float(az), 6)
+            return (int(x.get("gidx")), az_key)
+
+        new_key = _key(it)
+
+        replaced = False
+        for k, old in enumerate(self.items):
+            if _key(old) == new_key:
+                # 같은 (gidx, azimuth)면 덮어쓰기(파라미터 변경 업데이트)
+                self.items[k] = it
+                label = (f"{it['gidx']} | bu:{it['buoy_up']}  dist:{it['dist_len']}  "
+                        f"top:{it['buoyline_up']}  anc:{it['anchor_down']}  "
+                        f"az:{it['azimuth_deg'] if it['azimuth_deg'] is not None else 'radial'}  "
+                        f"A:B={it['anchor_a']}:{it['anchor_b']}")
+                self.sel_list.item(k).setText(label)
+                replaced = True
+                break
+
+        if not replaced:
+            self.items.append(it)
+            label = (f"{it['gidx']} | bu:{it['buoy_up']}  dist:{it['dist_len']}  "
+                    f"top:{it['buoyline_up']}  anc:{it['anchor_down']}  "
+                    f"az:{it['azimuth_deg'] if it['azimuth_deg'] is not None else 'radial'}  "
+                    f"A:B={it['anchor_a']}:{it['anchor_b']}")
+            self.sel_list.addItem(label)
+
         self.display_vtk()
 
     def del_selected_node(self):
@@ -858,6 +918,32 @@ class MooringRigWindow(QDialog):
         """self.items에 누적된 '노드+파라미터 세트'를 모두 저장.
         비어 있으면 현재 콤보와 현재 입력값으로 1세트 저장."""
         try:
+            def _add_poly_with_addnodes(group, p0, p1, n0, n1, add_n,
+                                        next_idx_ref, all_extra, all_edges, all_polys):
+                """
+                n0 -> n1 구간에 add_n개의 중간 노드를 등분 생성
+                """
+                nodes = [n0]
+
+                if add_n > 0:
+                    for k in range(1, add_n + 1):
+                        t = k / (add_n + 1)
+                        px = p0[0] + t * (p1[0] - p0[0])
+                        py = p0[1] + t * (p1[1] - p0[1])
+                        pz = p0[2] + t * (p1[2] - p0[2])
+
+                        nid = next_idx_ref[0]
+                        next_idx_ref[0] += 1
+
+                        all_extra.append([px, py, pz])
+                        nodes.append(nid)
+
+                nodes.append(n1)
+
+                all_polys.append({"group": group, "nodes": nodes})
+                for a, b in zip(nodes, nodes[1:]):
+                    all_edges.append((a, b))
+
             baseN = len(self.net_pts) + len(self.float_pts) + len(self.bc_new_pts) + len(self.moor_pts)
             next_idx = baseN
 
@@ -881,6 +967,9 @@ class MooringRigWindow(QDialog):
                     self.parent().rebuild_main_scene()
                 self.close()
                 return
+
+            buoy1_cache = {}
+
 
             for it in targets:
                 bx, by, bz = self._get_point_by_gidx(int(it["gidx"]))
@@ -914,23 +1003,76 @@ class MooringRigWindow(QDialog):
                         dist_end[2] + fa * (anchor_bottom[2] - dist_end[2]),
                     ]
 
-                    # --- 인덱스 ---
-                    i_buoy       = next_idx; next_idx += 1
+                    # --- 인덱스 --- (BUOY_TETHER는 (gidx, buoy_up) 기준으로 1개만)
+                    bkey = (int(it["gidx"]), float(it["buoy_up"]))
+                    if bkey in buoy1_cache:
+                        i_buoy = buoy1_cache[bkey]
+                        add_buoy_pt = False
+                    else:
+                        i_buoy = next_idx; next_idx += 1
+                        buoy1_cache[bkey] = i_buoy
+                        add_buoy_pt = True
+
                     i_dist_end   = next_idx; next_idx += 1
                     i_buoy_top   = next_idx; next_idx += 1
                     i_anchor_sp  = next_idx; next_idx += 1
                     i_anchor_bot = next_idx; next_idx += 1
 
-                    all_extra.extend([buoy_pt, dist_end, buoy_top, anchor_split, anchor_bottom])
+                    # buoy_pt는 처음 한 번만 추가(부이 노드 재사용이므로)
+                    if add_buoy_pt:
+                        all_extra.append(buoy_pt)
+
+                    all_extra.extend([dist_end, buoy_top, anchor_split, anchor_bottom])
 
                     # --- 그룹 ---
-                    groups = [
-                        ("BUOY_TETHER",   [it["gidx"],  i_buoy]),
-                        ("DISTANCE_ROPE", [it["gidx"],  i_dist_end]),
-                        ("BUOY_LINE",     [i_dist_end,  i_buoy_top]),
-                        ("ANCHOR_LINE_A", [i_dist_end,  i_anchor_sp]),  # A
-                        ("ANCHOR_LINE_B", [i_anchor_sp, i_anchor_bot]), # B
-                    ]
+                    next_idx_ref = [next_idx]
+
+                    # BUOY_TETHER (추가노드 없음)
+                    _add_poly_with_addnodes(
+                        "BUOY_TETHER",
+                        [bx, by, bz], buoy_pt,
+                        it["gidx"], i_buoy,
+                        0,
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    # DISTANCE_ROPE (추가노드 없음)
+                    _add_poly_with_addnodes(
+                        "DISTANCE_ROPE",
+                        [bx, by, bz], dist_end,
+                        it["gidx"], i_dist_end,
+                        0,
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    # BUOY_LINE (여기서 add_buoyline 사용)
+                    _add_poly_with_addnodes(
+                        "BUOY_LINE",
+                        dist_end, buoy_top,
+                        i_dist_end, i_buoy_top,
+                        int(it.get("add_buoyline", 0)),
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    # ANCHOR_LINE_A
+                    _add_poly_with_addnodes(
+                        "ANCHOR_LINE_A",
+                        dist_end, anchor_split,
+                        i_dist_end, i_anchor_sp,
+                        int(it.get("add_anchor_a", 0)),
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    # ANCHOR_LINE_B
+                    _add_poly_with_addnodes(
+                        "ANCHOR_LINE_B",
+                        anchor_split, anchor_bottom,
+                        i_anchor_sp, i_anchor_bot,
+                        int(it.get("add_anchor_b", 0)),
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    next_idx = next_idx_ref[0]
                 else:
                     # Buoy2 미사용: DISTANCE_ROPE / BUOY_LINE 생략, 앵커는 base에서 시작
                     alpha = math.radians(float(it.get("anchor_incl_deg", self._get_anchor_incl_deg())))
@@ -947,25 +1089,52 @@ class MooringRigWindow(QDialog):
                         bz + fa * (anchor_bottom[2] - bz),
                     ]
 
-                    # --- 인덱스 ---
-                    i_buoy       = next_idx; next_idx += 1
+                    # --- 인덱스 --- (BUOY_TETHER는 (gidx, buoy_up) 기준으로 1개만)
+                    bkey = (int(it["gidx"]), float(it["buoy_up"]))
+                    if bkey in buoy1_cache:
+                        i_buoy = buoy1_cache[bkey]
+                        add_buoy_pt = False
+                    else:
+                        i_buoy = next_idx; next_idx += 1
+                        buoy1_cache[bkey] = i_buoy
+                        add_buoy_pt = True
+
                     i_anchor_sp  = next_idx; next_idx += 1
                     i_anchor_bot = next_idx; next_idx += 1
 
-                    all_extra.extend([buoy_pt, anchor_split, anchor_bottom])
+                    if add_buoy_pt:
+                        all_extra.append(buoy_pt)
+
+                    all_extra.extend([anchor_split, anchor_bottom])
 
                     # --- 그룹 ---
-                    groups = [
-                        ("BUOY_TETHER",   [it["gidx"],  i_buoy]),
-                        ("ANCHOR_LINE_A", [it["gidx"],  i_anchor_sp]),  # A (base→split)
-                        ("ANCHOR_LINE_B", [i_anchor_sp, i_anchor_bot]), # B
-                    ]
+                    next_idx_ref = [next_idx]
 
-                for g, nodes in groups:
-                    nodes = [int(n) for n in nodes]
-                    all_polys.append({"group": g, "nodes": nodes})
-                    for a, b in zip(nodes, nodes[1:]):
-                        all_edges.append((a, b))
+                    _add_poly_with_addnodes(
+                        "BUOY_TETHER",
+                        [bx, by, bz], buoy_pt,
+                        it["gidx"], i_buoy,
+                        0,
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    _add_poly_with_addnodes(
+                        "ANCHOR_LINE_A",
+                        [bx, by, bz], anchor_split,
+                        it["gidx"], i_anchor_sp,
+                        int(it.get("add_anchor_a", 0)),
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    _add_poly_with_addnodes(
+                        "ANCHOR_LINE_B",
+                        anchor_split, anchor_bottom,
+                        i_anchor_sp, i_anchor_bot,
+                        int(it.get("add_anchor_b", 0)),
+                        next_idx_ref, all_extra, all_edges, all_polys
+                    )
+
+                    next_idx = next_idx_ref[0]
 
             # 저장
             ensure_links_dir()
@@ -1027,7 +1196,7 @@ class UniversalLinkWindow(QDialog):
         self.group_selector.addItem("Bridle Line", "BRIDLE_LINE")
         right.addWidget(self.group_selector)
 
-        right.addWidget(QLabel("Additional nodes (Side rope main only)"))
+        right.addWidget(QLabel("Additional nodes"))
         self.addn_input = QLineEdit("0")
         right.addWidget(self.addn_input)
 
@@ -1070,7 +1239,7 @@ class UniversalLinkWindow(QDialog):
         gkey = self.group_selector.currentData()
         # 추가 노드 입력: SIDE_ROPE_MAIN만 사용
         if hasattr(self, "addn_input"):
-            self.addn_input.setEnabled(gkey == "SIDE_ROPE_MAIN")
+            self.addn_input.setEnabled(True)
 
         # BRIDLE_LINE이면 기본 섹션 자동 세팅: out-floater → mooring-frame
         if gkey == "BRIDLE_LINE":
@@ -1381,16 +1550,11 @@ class UniversalLinkWindow(QDialog):
         gkey = self.group_selector.currentData()
         glab = self.group_selector.currentText()
 
-        # ✅ SIDE_ROPE_MAIN만 "추가 노드 개수" 적용
-        if gkey == "SIDE_ROPE_MAIN":
-            try:
-                add_n = max(0, int(self.addn_input.text()))  # 추가 노드 개수(0 이상)
-            except Exception:
-                add_n = 0
-            segs = add_n + 1       # 내부 보간 로직은 segs-1 개의 중간점을 만듦
-        else:
+        try:
+            add_n = max(0, int(self.addn_input.text()))
+        except Exception:
             add_n = 0
-            segs = 1               # 다른 그룹은 중간점 없음
+        segs = add_n + 1
 
         if s is None or e is None:
             return
@@ -1815,8 +1979,7 @@ class MainWindow(QMainWindow):
         hline1.setFrameShadow(QFrame.Sunken)
         form_net.addRow(hline1)
 
-        form_net.addRow(QLabel("Half Mesh Size (m)"), self.half_mesh_input)
-        form_net.addRow(QLabel("Twine Diameter (m)"), self.diameter_input)
+        form_net.addRow(QLabel("Numerical half mesh size (m)"), self.half_mesh_input)
         form_net.addRow(QLabel("BottomNet Angle (°)"), self.bottomnetangle_input)
 
         net_btn = QPushButton("Submit Net Parameter")
@@ -2160,6 +2323,31 @@ class MainWindow(QMainWindow):
 
     # gui_interface.py
     def export_and_exit(self):
+        try:
+            import json, os
+
+            os.makedirs("Fish_Cage", exist_ok=True)
+
+            # 2) meshinfo.py에 저장할 플래그를 export_med.py가 읽을 수 있도록 파일로 남김
+            flags_path = os.path.join("Fish_Cage", "flags.json")
+            with open(flags_path, "w", encoding="utf-8") as f:
+                json.dump({"S_a": bool(self.rb_sinkers.isChecked())}, f, indent=2, ensure_ascii=False)
+
+            # 1) Sinker array 체크(=rb_sinkers 선택)되어 있으면
+            #    bottom ring을 "side net 맨 밑(=요구한 위치)"에 강제로 생성
+            if self.rb_sinkers.isChecked():
+                # 네가 지정한 값 그대로 사용:
+                # z 위치: self.z_float_input
+                # 둘레:    self.bn_circum_input
+                self.bottomcollar_z.setText(str(float(self.z_weight_input.text())))
+                self.bottomcollar_cir.setText(str(float(self.bn_circum_input.text())))
+
+                # 기존 생성 로직 재사용 (bottom_collar_temp.json 저장 + 표시까지)
+                self.generate_bottom_collar()
+
+        except Exception as e:
+            print(f"❌ Sinker array export pre-process failed: {e}")
+
         # 1) VTU는 GUI에서 즉시 저장
         try:
             out_dir = os.path.join("Fish_Cage", "saves")

@@ -5,7 +5,7 @@ import re
 import numpy as np
 
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QFileDialog, QToolBar, QAction, QMessageBox, QLabel
+    QApplication, QMainWindow, QFileDialog, QToolBar, QAction, QMessageBox, QLabel, QSlider
 )
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
@@ -39,6 +39,7 @@ class PosiVTKViewer(QMainWindow):
         # --- 상태 변수 (시간 시퀀스 관리) ---
         self.files = []         # 시간 순서대로 정렬된 posi 파일 리스트
         self.current_index = -1 # 현재 보고 있는 파일 인덱스
+        self.posi_dir = None
 
         # --- meshinfo 관련 상태 ---
         self.meshinfo = None
@@ -47,6 +48,15 @@ class PosiVTKViewer(QMainWindow):
         self.lines_pipe_top = None
         self.lines_bracket = None
         self.lines_bottom_ring = None
+        self.node_actor = None
+        self.nodes_visible = True
+        self.lines_side_rope = None
+        self.lines_bridle    = None
+        self.lines_buoy      = None
+        self.lines_anchor_a  = None
+        self.lines_anchor_b  = None
+        self.lines_moorfrm   = None
+        self._camera_initialized = False
 
         # --- VTK 위젯 생성 ---
         self.vtk_widget = QVTKRenderWindowInteractor(self)
@@ -85,9 +95,12 @@ class PosiVTKViewer(QMainWindow):
         act_next.triggered.connect(self.show_next)
         toolbar.addAction(act_next)
 
+        act_toggle_nodes = QAction("Nodes ON/OFF", self)
+        act_toggle_nodes.triggered.connect(self.toggle_nodes)
+        toolbar.addAction(act_toggle_nodes)
         # --- 자동재생용 타이머 ---
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(1)  # 150ms = 약 6~7fps
+        self.timer.setInterval(0)  # 150ms = 약 6~7fps
 
         act_start = QAction("Start", self)
         act_start.triggered.connect(self.start_auto)
@@ -100,6 +113,15 @@ class PosiVTKViewer(QMainWindow):
         # 상태표시 (현재 시간/인덱스)
         self.status_label = QLabel("")
         self.statusBar().addPermanentWidget(self.status_label)
+
+        # --- Time slider (0 ~ last index) ---
+        self.time_slider = QSlider(Qt.Horizontal)
+        self.time_slider.setMinimum(0)
+        self.time_slider.setMaximum(0)
+        self.time_slider.setValue(0)
+        self.time_slider.setFixedWidth(260)  # 취향: 길이 조절
+        self.time_slider.valueChanged.connect(self.on_slider_changed)
+        self.statusBar().addPermanentWidget(self.time_slider)
 
         # 초기 파일 있으면 바로 로드
         if path is not None and os.path.exists(path):
@@ -134,6 +156,26 @@ class PosiVTKViewer(QMainWindow):
                 break
             cur = parent
         return None
+    
+    def _sync_slider(self):
+        """현재 index/파일수와 슬라이더 상태 동기화"""
+        if not hasattr(self, "time_slider"):
+            return
+        n = len(self.files) if self.files else 1
+        maxi = max(0, n - 1)
+        cur = 0 if self.current_index < 0 else min(self.current_index, maxi)
+
+        self.time_slider.blockSignals(True)
+        self.time_slider.setMinimum(0)
+        self.time_slider.setMaximum(maxi)
+        self.time_slider.setValue(cur)
+        self.time_slider.blockSignals(False)
+
+    def on_slider_changed(self, value: int):
+        if not self.files:
+            return
+        self.refresh_sequence()
+        self.show_by_index(int(value))
 
     def _ensure_meshinfo_loaded(self, posi_path: str):
         """
@@ -184,6 +226,13 @@ class PosiVTKViewer(QMainWindow):
         self.lines_bracket = meshinfo.get("Line_braket") or []
         self.lines_bottom_ring = meshinfo.get("Lines_bottom_ring") or []
 
+        self.lines_side_rope = meshinfo.get("Lines_side_rope") or []
+        self.lines_bridle    = meshinfo.get("Lines_bridle") or []
+        self.lines_buoy      = meshinfo.get("Lines_buoy") or []
+        self.lines_anchor_a  = meshinfo.get("Lines_anchor_A") or []
+        self.lines_anchor_b  = meshinfo.get("Lines_anchor_B") or []
+        self.lines_moorfrm   = meshinfo.get("Lines_mooring_frame") or []
+
         print(f"[meshinfo] {mpath} 로드 완료")
         print(f"  Lines_netting : {len(self.lines_netting)}")
         print(f"  Lines_pipe_top: {len(self.lines_pipe_top)}")
@@ -201,6 +250,37 @@ class PosiVTKViewer(QMainWindow):
             return
         self.setup_sequence_and_show(path)
 
+    def refresh_sequence(self):
+        """posi_dir에서 새로 생긴 posi*.txt를 감지해 self.files를 갱신"""
+        if not self.posi_dir or not os.path.isdir(self.posi_dir):
+            return False
+
+        candidates = glob.glob(os.path.join(self.posi_dir, "posi*.txt"))
+        if not candidates:
+            return False
+
+        candidates.sort(key=extract_time_from_name)
+
+        # 변화 없으면 종료
+        if len(candidates) == len(self.files):
+            return False
+
+        # 현재 보고 있는 파일 시간 유지하면서 index 재설정
+        cur_t = None
+        if 0 <= self.current_index < len(self.files):
+            cur_t = extract_time_from_name(self.files[self.current_index])
+
+        self.files = candidates
+
+        if cur_t is not None:
+            times = [extract_time_from_name(f) for f in self.files]
+            self.current_index = min(range(len(times)), key=lambda i: abs(times[i] - cur_t))
+        else:
+            self.current_index = min(max(self.current_index, 0), len(self.files) - 1)
+
+        self._sync_slider()
+        return True
+
     def setup_sequence_and_show(self, path: str):
         """
         1) 선택한 path를 기준으로 같은 폴더의 posi*.txt 파일들을 전부 찾고
@@ -208,6 +288,7 @@ class PosiVTKViewer(QMainWindow):
         3) 그 리스트에서 path 위치를 current_index로 설정하고 화면에 표시
         """
         directory = os.path.dirname(path)
+        self.posi_dir = directory
 
         # 같은 폴더 내 posi*.txt 파일 모두 찾기
         candidates = glob.glob(os.path.join(directory, "posi*.txt"))
@@ -233,18 +314,58 @@ class PosiVTKViewer(QMainWindow):
             self.current_index = idx
 
         self.show_by_index(self.current_index)
+        self._sync_slider()
+
+    def toggle_nodes(self):
+        if self.actor_points is None:
+            return
+
+        self.nodes_visible = not self.nodes_visible
+        self.actor_points.SetVisibility(1 if self.nodes_visible else 0)
+        self.vtk_widget.GetRenderWindow().Render()
 
     # ----------------- 시퀀스 이동 -----------------
     def show_prev(self):
+        self.refresh_sequence()
         if not self.files:
             return
-        self.current_index = (self.current_index - 1) % len(self.files)
+
+        if self.current_index <= 0:
+            self.current_index = 0
+            self.show_by_index(self.current_index)
+            return
+
+        self.current_index -= 1
         self.show_by_index(self.current_index)
 
     def show_next(self):
         if not self.files:
             return
-        self.current_index = (self.current_index + 1) % len(self.files)
+
+        old_last = len(self.files) - 1
+        old_idx = self.current_index
+
+        self.refresh_sequence()  # 새 파일 감지
+        new_last = len(self.files) - 1
+
+        # (1) 예전엔 마지막이었는데, 새 파일이 생겼으면 다음으로 이동
+        if old_idx == old_last and new_last > old_last:
+            self.current_index = min(old_idx + 1, new_last)
+            self.show_by_index(self.current_index)
+            return
+
+        # (2) 새 파일이 없으면 "끝에서 멈춤" (wrap-around 금지)
+        if self.current_index >= new_last:
+            self.current_index = new_last
+            self.show_by_index(self.current_index)
+
+            # 자동재생 중이면 여기서 멈추고 싶으면 주석 해제
+            # if self.timer.isActive():
+            #     self.stop_auto()
+            return
+
+        # (3) 일반적으로 다음 인덱스
+        self.current_index += 1
         self.show_by_index(self.current_index)
 
     def show_by_index(self, index: int):
@@ -254,7 +375,7 @@ class PosiVTKViewer(QMainWindow):
         path = self.files[index]
         self.current_index = index
         self.load_posi(path)
-
+        self._sync_slider()
     # ----------------- 실제 posi 파일 로딩 & VTK 표시 -----------------
     def load_posi(self, path):
         try:
@@ -298,17 +419,21 @@ class PosiVTKViewer(QMainWindow):
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection(glyph_filter.GetOutputPort())
 
-        actor_points = vtk.vtkActor()
-        actor_points.SetMapper(mapper)
-        actor_points.GetProperty().SetPointSize(4)
+        self.actor_points = vtk.vtkActor()
+        self.actor_points.SetMapper(mapper)
+        self.actor_points.GetProperty().SetPointSize(4)
 
+
+        self.actor_points.SetVisibility(1 if self.nodes_visible else 0)
         # ==========================================================
         # 🔥 Line element + 노드 인장력(N) → line 평균 인장력 컬러
         # ==========================================================
+        
+        cam_state = self._get_camera_state() if self._camera_initialized else None
 
         # renderer 초기화
         self.renderer.RemoveAllViewProps()
-        self.renderer.AddActor(actor_points)
+        self.renderer.AddActor(self.actor_points)
 
         # ------------------------------
         # 1) 노드 인장력 N 로드
@@ -340,7 +465,13 @@ class PosiVTKViewer(QMainWindow):
             self.lines_netting,
             self.lines_pipe_top,
             self.lines_bracket,
-            self.lines_bottom_ring,   # ✅ 추가
+            self.lines_bottom_ring,
+            self.lines_side_rope,
+            self.lines_bridle,
+            self.lines_buoy,
+            self.lines_anchor_a,
+            self.lines_anchor_b,
+            self.lines_moorfrm,
         ):
             if not group:
                 continue
@@ -431,7 +562,9 @@ class PosiVTKViewer(QMainWindow):
         self.renderer.AddActor(actor_lines)
         
         self.renderer.SetBackground(0.1, 0.1, 0.1)
-        self.renderer.ResetCamera()
+        if not self._camera_initialized:
+            self.renderer.ResetCamera()
+            self._camera_initialized = True
 
         # 상태 표시 (시간 + 인덱스)
         t = extract_time_from_name(path)
@@ -445,7 +578,10 @@ class PosiVTKViewer(QMainWindow):
     def start_auto(self):
         if not self.files:
             return
-        # 타이머가 호출될 때마다 show_next 실행
+        try:
+            self.timer.timeout.disconnect(self.show_next)
+        except Exception:
+            pass
         self.timer.timeout.connect(self.show_next)
         self.timer.start()
 
@@ -456,6 +592,31 @@ class PosiVTKViewer(QMainWindow):
             self.timer.timeout.disconnect(self.show_next)
         except Exception:
             pass
+
+    def _get_camera_state(self):
+        cam = self.renderer.GetActiveCamera()
+        return (
+            cam.GetPosition(),
+            cam.GetFocalPoint(),
+            cam.GetViewUp(),
+            cam.GetParallelScale(),
+            cam.GetViewAngle(),
+            cam.GetClippingRange(),
+            cam.GetParallelProjection(),
+        )
+
+    def _set_camera_state(self, st):
+        if st is None:
+            return
+        cam = self.renderer.GetActiveCamera()
+        pos, foc, up, pscale, vangle, clip, pproj = st
+        cam.SetPosition(*pos)
+        cam.SetFocalPoint(*foc)
+        cam.SetViewUp(*up)
+        cam.SetParallelScale(pscale)
+        cam.SetViewAngle(vangle)
+        cam.SetClippingRange(*clip)
+        cam.SetParallelProjection(pproj)
 
 def main():
     app = QApplication(sys.argv)

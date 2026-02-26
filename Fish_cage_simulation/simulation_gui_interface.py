@@ -10,25 +10,30 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QLocale
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from vtkmodules.vtkInteractionStyle import vtkInteractorStyleTrackballCamera
+from PyQt5.QtGui import QDoubleValidator
 
 EDGE_GROUP_ORDER = [
     "floater", "net twine", "bottom ring",
+    "sinker",
     "side ropes", "bridle line",
     "buoyline1", "buoyline2",
     "anchor line 1", "anchor line 2",
-    "mooring line", "bracket",
+    "mooring frame", "bracket",
 ]
 EDGE_GROUP_LABEL = {
     "floater":"Floater", "net twine":"Net twine", "bottom ring":"Bottom ring",
+    "sinker":"Sinker",
     "side ropes":"Side ropes", "bridle line":"Bridle line",
     "buoyline1":"Buoy line 1", "buoyline2":"Buoy line 2",
     "anchor line 1":"Anchor line A", "anchor line 2":"Anchor line B",
-    "mooring line":"Mooring line", "bracket":"Bracket",
+    "mooring frame":"Mooring frame", "bracket":"Bracket",
 }
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.group_checks = {}
+
         self.setWindowTitle("Fish Cage Simulation GUI (DaeYeon Cho)")
         self.setMinimumSize(1200, 800)
         self._build_ui()
@@ -105,6 +110,8 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Open VTU (PolyData)", "", "VTU Files (*.vtu)")
         if not path:
             return
+        
+        self.current_vtu_path = path
 
         # ---- PolyData 전용 리더 ----
         reader = vtk.vtkXMLPolyDataReader()
@@ -143,6 +150,18 @@ class MainWindow(QMainWindow):
 
         # 그룹 업데이트 (edge_group / node_group)
         self.edge_groups, self.node_groups = self._extract_groups_from_polydata(poly)
+        
+        # edge_groups 만든 직후에 추가
+        self.meshinfo = self._try_load_meshinfo(self.current_vtu_path)
+        S_a = bool((self.meshinfo or {}).get("S_a", False))
+
+        # S_a=True면 sinker 그룹을 bottom ring에서 파생
+        if S_a and "bottom ring" in (self.edge_groups or {}) and self.edge_groups["bottom ring"]:
+            self.edge_groups["sinker"] = list(self.edge_groups["bottom ring"])
+        else:
+            # 없으면 아예 비워두거나 키를 삭제 (UI enable을 위해 여기선 비움)
+            self.edge_groups.pop("sinker", None)
+
         self._sync_group_ui()
         # UI 콤보가 있다면 갱신
         if hasattr(self, "cb_edge_group") and self.cb_edge_group is not None:
@@ -191,17 +210,70 @@ class MainWindow(QMainWindow):
             def _v(le):
                 t = (le.text() or "").replace(",", "").strip()
                 return float(t) if t != "" else None
-            mperw = _v(self.in_br_meter_per_w)
             self._form_state[key] = {
                 "BrYoungModule": E, "RHO": rho,
-                "Br_diameter": d, "meter_per_w": mperw
+                "Br_diameter": d
             }
-        elif key == "bracket":  # ✅ 추가
+        elif key == "bracket":
             self._form_state[key] = {
                 "BrktYoungModule": E,
                 "RHO": rho,
                 "Brkt_diameter": d,
             }
+        elif key == "side ropes":
+            self._form_state[key] = {
+                "SideRopeYoungModule": E,
+                "RHO": rho,
+                "SideRope_diameter": d
+            }
+        elif key == "bridle line":
+            self._form_state[key] = {
+                "BridleYoungModule": E,
+                "RHO": rho,
+                "Bridle_diameter": d
+            }
+        elif key in ("buoyline1", "buoyline2"):
+            def _v(le):
+                t = (le.text() or "").replace(",", "").strip()
+                return float(t) if t != "" else None
+
+            bf = _v(getattr(self, "in_buoy_force", None))
+
+            if key == "buoyline1":
+                self._form_state[key] = {
+                    "Buoy1YoungModule": E, "RHO": rho, "Buoy1_diameter": d,
+                    "BuoyForce": bf
+                }
+            else:  # buoyline2
+                self._form_state[key] = {
+                    "Buoy2YoungModule": E, "RHO": rho, "Buoy2_diameter": d,
+                    "BuoyForce": bf
+                }
+        elif key == "anchor line 1":
+            self._form_state[key] = {
+                "AnchorAYoungModule": E,
+                "RHO": rho,
+            "AnchorA_diameter": d
+            }
+        elif key == "anchor line 2":
+            self._form_state[key] = {
+                "AnchorBYoungModule": E,
+                "RHO": rho,
+                "AnchorB_diameter": d
+            }
+        elif key == "mooring line":
+            self._form_state[key] = {
+                "MooringYoungModule": E,
+                "RHO": rho,
+                "Mooring_diameter": d
+            }
+        elif key == "mooring frame":
+            self._form_state[key] = {
+                "MoorFrameYoungModule": E,
+                "RHO": rho,
+                "MoorFrame_diameter": d
+            }
+
 
     def _load_state_to_form(self, key: str):
         # 먼저 전체 폼을 비우지 않습니다(입력 유지) — 상태에 값이 있으면 그 값으로 덮어쓰기
@@ -233,7 +305,6 @@ class MainWindow(QMainWindow):
             _set(self.in_bottom_net_weight,st.get("BottomNet_cen_weight"))
         elif key == "bottom ring":
             _set(self.in_d,              st.get("Br_diameter"))
-            _set(self.in_br_meter_per_w, st.get("meter_per_w"))
 
     def _extract_groups_from_polydata(self, poly):
         """
@@ -397,13 +468,47 @@ class MainWindow(QMainWindow):
         ugrid.GetCellData().AddArray(group_arr)
         return ugrid
 
+
+    def _try_load_meshinfo(self, vtu_path: str) -> dict:
+        """
+        vtu 경로 기준으로 meshinfo.py를 찾아서 meshinfo dict를 로드.
+        (찾는 순서)
+        1) vtu 폴더: meshinfo.py
+        2) 상위 폴더: asterinput/meshinfo.py
+        3) 더 상위로 계속 탐색
+        """
+        def _candidates(cur: str):
+            return [
+                os.path.join(cur, "meshinfo.py"),
+                os.path.join(cur, "asterinput", "meshinfo.py"),
+            ]
+
+        cur = os.path.abspath(os.path.dirname(vtu_path))
+        for _ in range(10):
+            for p in _candidates(cur):
+                if os.path.isfile(p):
+                    scope = {}
+                    try:
+                        with open(p, "r", encoding="utf-8") as f:
+                            code = f.read()
+                        exec(code, scope)
+                        mi = scope.get("meshinfo", {})
+                        return mi if isinstance(mi, dict) else {}
+                    except Exception:
+                        return {}
+            parent = os.path.dirname(cur)
+            if parent == cur:
+                break
+            cur = parent
+        return {}
+
     def _find_edge_groups(self, ugrid: vtk.vtkUnstructuredGrid):
         fixed_names = {
             "floater", "net twine", "bottom ring",
             "side ropes", "bridle line",
             "buoyline1", "buoyline2",
             "anchor line 1", "anchor line 2",
-            "mooring line", "bracket"
+            "mooring frame", "bracket"
         }
 
         # 1D 셀만 선별
@@ -439,11 +544,27 @@ class MainWindow(QMainWindow):
 
         return group_map if group_map else {"EDGES_ALL": edge_ids}
 
+    def _count_unique_points_from_cell_ids(self, data_obj, cell_ids):
+        pts = set()
+        idlist = vtk.vtkIdList()
+        for cid in cell_ids:
+            data_obj.GetCell(int(cid)).GetPointIds(idlist)
+            for i in range(idlist.GetNumberOfIds()):
+                pts.add(idlist.GetId(i))
+        return len(pts)
+
     def _sync_group_ui(self):
         have = set((self.edge_groups or {}).keys())
         for key, cb in getattr(self, "group_checks", {}).items():
-            if key in have and len(self.edge_groups.get(key, [])) > 0:
+            if key in have and len(self.edge_groups.get(key, [])) > 0:  
                 n = len(self.edge_groups[key])
+
+                if key == "sinker" and getattr(self, "med_data", None) is not None:
+                    try:
+                        n = self._count_unique_points_from_cell_ids(self.med_data, self.edge_groups[key])
+                    except Exception:
+                        n = len(self.edge_groups[key])
+
                 base = EDGE_GROUP_LABEL.get(key, key)
                 cb.blockSignals(True)
                 cb.setEnabled(True)
@@ -456,6 +577,16 @@ class MainWindow(QMainWindow):
                 cb.setEnabled(False)
                 cb.setText(base)
                 cb.blockSignals(False)
+
+        # ===== sinker가 있으면 bottom ring 비활성화 =====
+        sinker_cb = getattr(self, "group_checks", {}).get("sinker", None)
+        bottom_cb = getattr(self, "group_checks", {}).get("bottom ring", None)
+        if sinker_cb and bottom_cb and sinker_cb.isEnabled():
+            bottom_cb.blockSignals(True)
+            bottom_cb.setChecked(False)
+            bottom_cb.setEnabled(False)
+            bottom_cb.setText(EDGE_GROUP_LABEL.get("bottom ring", "bottom ring"))
+            bottom_cb.blockSignals(False)
 
     def _on_group_toggled(self, key: str, checked: bool):
         if not hasattr(self, "group_checks"):
@@ -482,12 +613,21 @@ class MainWindow(QMainWindow):
                 self._clear_edge_preview()
 
         # 3) 섹션 enable
-        net_on    = (key == "net twine" and checked)
-        floater_on= (key == "floater" and checked)
-        bottom_on = (key == "bottom ring" and checked)
+        net_on     = (key == "net twine" and checked)
+        floater_on = (key == "floater" and checked)
+        sinker_on  = (key == "sinker" and checked) 
+
         self._set_net_section_enabled(net_on)
         self._set_floater_section_enabled(floater_on)
-        self._set_bottom_section_enabled(bottom_on)
+
+        # grp_bottom(SINKER 박스)은 sinker일 때만 켜지게
+        if hasattr(self, "grp_bottom"):
+            self.grp_bottom.setEnabled(bool(sinker_on))
+
+        # 입력칸도 sinker일 때만 켜지게
+        w = getattr(self, "in_single_sinker_kg", None)
+        if w is not None:
+            w.setEnabled(bool(sinker_on))
 
         # 3-1) Floater 선택 시 d 비활성
         if hasattr(self, "in_d"):
@@ -502,6 +642,11 @@ class MainWindow(QMainWindow):
             if self._current_group == key:
                 self._current_group = None
 
+        if hasattr(self, "grp_buoy") and hasattr(self, "in_buoy_force"):
+            on = bool(checked and key in ("buoyline1", "buoyline2"))
+            self.grp_buoy.setEnabled(on)
+            self.in_buoy_force.setEnabled(on)  # 선택: 명시적으로 같이
+            self._buoy_force_target = key if on else None
 
     def _clear_edge_preview(self):
         if hasattr(self, "_edge_preview_actor") and self._edge_preview_actor:
@@ -510,6 +655,13 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
             self._edge_preview_actor = None
+            
+        if hasattr(self, "_node_preview_actor") and self._node_preview_actor:
+            try:
+                self.ren.RemoveActor(self._node_preview_actor)
+            except Exception:
+                pass
+            self._node_preview_actor = None
 
         if getattr(self, "med_actor", None):
             self.med_actor.GetProperty().SetColor(1,1,1)
@@ -519,9 +671,25 @@ class MainWindow(QMainWindow):
 
     def _set_bottom_section_enabled(self, on: bool):
         if hasattr(self, "grp_bottom"):
-            self.grp_bottom.setEnabled(bool(on))
+            self.grp_bottom.setEnabled(bool(False))
     
     def preview_edge_group(self, group_name: str):
+
+        # ===== 모든 프리뷰(선/점) 먼저 제거 =====
+        if hasattr(self, "_edge_preview_actor") and self._edge_preview_actor:
+            try:
+                self.ren.RemoveActor(self._edge_preview_actor)
+            except Exception:
+                pass
+            self._edge_preview_actor = None
+
+        if hasattr(self, "_node_preview_actor") and self._node_preview_actor:
+            try:
+                self.ren.RemoveActor(self._node_preview_actor)
+            except Exception:
+                pass
+            self._node_preview_actor = None
+
         # 유효성 검사
         if not group_name or group_name not in getattr(self, "edge_groups", {}):
             return
@@ -535,6 +703,70 @@ class MainWindow(QMainWindow):
 
         ids = self.edge_groups[group_name]
         if not ids:
+            return
+
+        #sinker는 선이 아니라 "노드(점)"로 표시
+        if group_name == "sinker":
+            # 기존 하이라이트(선/점) 제거
+            if hasattr(self, "_edge_preview_actor") and self._edge_preview_actor:
+                try:
+                    self.ren.RemoveActor(self._edge_preview_actor)
+                except Exception:
+                    pass
+                self._edge_preview_actor = None
+            if hasattr(self, "_node_preview_actor") and self._node_preview_actor:
+                try:
+                    self.ren.RemoveActor(self._node_preview_actor)
+                except Exception:
+                    pass
+                self._node_preview_actor = None
+
+            # 선택한 라인 셀들을 extract
+            idarr = vtk.vtkIdTypeArray()
+            idarr.SetNumberOfComponents(1)
+            for cid in ids:
+                idarr.InsertNextValue(int(cid))
+
+            sel_node = vtk.vtkSelectionNode()
+            sel_node.SetFieldType(vtk.vtkSelectionNode.CELL)
+            sel_node.SetContentType(vtk.vtkSelectionNode.INDICES)
+            sel_node.SetSelectionList(idarr)
+
+            selection = vtk.vtkSelection()
+            selection.AddNode(sel_node)
+
+            extract = vtk.vtkExtractSelection()
+            extract.SetInputData(0, data_obj)
+            extract.SetInputData(1, selection)
+            extract.Update()
+
+            # extract 결과에서 "포인트만" glyph로 찍기
+            geom = vtk.vtkGeometryFilter()
+            geom.SetInputConnection(extract.GetOutputPort())
+            geom.Update()
+
+            poly = geom.GetOutput()
+            vg = vtk.vtkVertexGlyphFilter()
+            vg.SetInputData(poly)
+            vg.Update()
+
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputConnection(vg.GetOutputPort())
+
+            actor = vtk.vtkActor()
+            actor.SetMapper(mapper)
+            actor.GetProperty().SetColor(1.0, 0.0, 0.0)  # 🔴 빨강
+            actor.GetProperty().SetPointSize(10)         # 필요하면 조절
+
+            # 배경 메쉬 디밍(원하면 유지)
+            if getattr(self, "med_actor", None):
+                self.med_actor.GetProperty().SetColor(0.75, 0.75, 0.75)
+                self.med_actor.GetProperty().SetOpacity(0.35)
+
+            self._node_preview_actor = actor
+            self.ren.AddActor(actor)
+            self.ren.Render()
+            self.vtk_widget.GetRenderWindow().Render()
             return
 
         # 이전 하이라이트 제거
@@ -634,7 +866,6 @@ class MainWindow(QMainWindow):
         self.in_curr_y = QLineEdit();    self.in_curr_y.setPlaceholderText("(m/s)")
         self.in_curr_z = QLineEdit();    self.in_curr_z.setPlaceholderText("(m/s)")
 
-        from PyQt5.QtGui import QDoubleValidator
         _dv_env = QDoubleValidator(0.0, 1e12, 6)
         for le in (self.in_dt, self.in_duration, self.in_curr_x, self.in_curr_y, self.in_curr_z):
             le.setValidator(_dv_env); le.setAlignment(Qt.AlignRight)
@@ -670,8 +901,6 @@ class MainWindow(QMainWindow):
         form.addRow("Density (kg/m³)", self.in_rho)
         form.addRow("Diameter (m)", self.in_d)
 
-
-
         # =========================
         #   NET 섹션 (박스)
         # =========================
@@ -697,7 +926,6 @@ class MainWindow(QMainWindow):
         self.in_bottom_net_weight = QLineEdit()
         self.in_bottom_net_weight.setPlaceholderText("(kg)")
 
-        from PyQt5.QtGui import QDoubleValidator
         _dv = QDoubleValidator(0.0, 1e9, 4)
         self.in_mesh_length.setValidator(_dv)
         self.in_bottom_net_weight.setValidator(_dv)
@@ -749,7 +977,7 @@ class MainWindow(QMainWindow):
         # =========================
         #   BOTTOM RING 섹션 (박스)
         # =========================
-        self.grp_bottom = QGroupBox("BOTTOM RING")
+        self.grp_bottom = QGroupBox("SINKER") 
         self.grp_bottom.setCheckable(False)
         self.grp_bottom.setStyleSheet("""
         QGroupBox {
@@ -764,20 +992,50 @@ class MainWindow(QMainWindow):
             padding: 0 4px;
         }
         """)
-        br_form = QFormLayout(self.grp_bottom)
+        sk_form = QFormLayout(self.grp_bottom)
 
-        # meter_per_w (예: m/kg 또는 m per weight)
-        from PyQt5.QtGui import QDoubleValidator
-        _dv = QDoubleValidator(0.0, 1e12, 6)
-        self.in_br_meter_per_w = QLineEdit()
-        self.in_br_meter_per_w.setPlaceholderText("(meter per w)")
-        self.in_br_meter_per_w.setValidator(_dv)
-        self.in_br_meter_per_w.setAlignment(Qt.AlignRight)
+        # ✅ single sinker weight 입력 (kg)
+        self.in_single_sinker_kg = QLineEdit()
+        self.in_single_sinker_kg.setPlaceholderText("(kg)")
+        self.in_single_sinker_kg.setValidator(_dv)
+        self.in_single_sinker_kg.setAlignment(Qt.AlignRight)
 
-        br_form.addRow("meter per w", self.in_br_meter_per_w)
+        sk_form.addRow("single sinker weight", self.in_single_sinker_kg)
 
+        # 기본은 비활성
         self.grp_bottom.setEnabled(False)
         form.addRow(self.grp_bottom)
+
+        # =========================
+        #   BUOYLINE 섹션 (박스)
+        # =========================
+        self.grp_buoy = QGroupBox("BUOYLINE")
+        self.grp_buoy.setCheckable(False)
+        self.grp_buoy.setStyleSheet("""
+        QGroupBox {
+            font-weight: 600;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 4px;
+        }
+        """)
+        buoy_form = QFormLayout(self.grp_buoy)
+
+        self.in_buoy_force = QLineEdit()
+        self.in_buoy_force.setPlaceholderText("(N) per buoy node")
+        self.in_buoy_force.setValidator(_dv)
+        self.in_buoy_force.setAlignment(Qt.AlignRight)
+
+        buoy_form.addRow("Buoyancy", self.in_buoy_force)
+
+        # 기본은 비활성 (buoyline1/2 선택 시만 활성)
+        self.grp_buoy.setEnabled(False)
+        form.addRow(self.grp_buoy)
 
         btn_save = QPushButton("Assign & Save", w)
 
@@ -793,7 +1051,11 @@ class MainWindow(QMainWindow):
                 self._save_form_to_state(key_now)
 
             # 버퍼 내용 합쳐서 JSON 스키마로 재배치
-            data = {"Floater": {}, "Net": {}, "Bottom_ring": {}}
+            data = {
+                "Floater": {}, "Net": {}, "Bottom_ring": {}, "Sinker": {},
+                "Side_ropes": {}, "Bridle": {}, "Buoyline1": {},
+                "Anchor_A": {}, "Anchor_B": {}, "Mooring_line": {}, "Mooring_frame": {}
+            }
             
             # 🔸 ENVIRONMENT 값도 materials.json에 포함
             def _getf(le, default=None):
@@ -857,7 +1119,6 @@ class MainWindow(QMainWindow):
                     "BrYoungModule": b.get("BrYoungModule"),
                     "RHO": b.get("RHO"),
                     "Br_diameter": b.get("Br_diameter"),
-                    "meter_per_w": b.get("meter_per_w"),
                 }
             if "bracket" in st:  # ✅ 추가
                 b = st["bracket"]
@@ -865,6 +1126,84 @@ class MainWindow(QMainWindow):
                     "BrktYoungModule": b.get("BrktYoungModule"),
                     "RHO":             b.get("RHO"),
                     "Brkt_diameter":   b.get("Brkt_diameter"),
+                }
+
+            if hasattr(self, "group_checks") and "sinker" in self.group_checks:
+                if self.group_checks["sinker"].isEnabled():  # sinker 그룹이 존재할 때만
+                    try:
+                        kg = float((self.in_single_sinker_kg.text() or "0").strip().replace(",", ""))
+                    except Exception:
+                        kg = 0.0
+
+                    data["Sinker"] = {
+                        "single_sinker_weight": kg * 9.8
+                    }
+
+            if "side ropes" in st:
+                s = st["side ropes"]
+                data["Side_ropes"] = {
+                    "SideRopeYoungModule": s.get("SideRopeYoungModule"),
+                    "RHO": s.get("RHO"),
+                    "SideRope_diameter": s.get("SideRope_diameter"),
+                }
+
+            if "bridle line" in st:
+                s = st["bridle line"]
+                data["Bridle"] = {
+                    "BridleYoungModule": s.get("BridleYoungModule"),
+                    "RHO": s.get("RHO"),
+                    "Bridle_diameter": s.get("Bridle_diameter"),
+                }
+
+            if "buoyline1" in st:
+                s = st["buoyline1"]
+                data["Buoyline1"] = {
+                    "Buoy1YoungModule": s.get("Buoy1YoungModule"),
+                    "RHO": s.get("RHO"),
+                    "Buoy1_diameter": s.get("Buoy1_diameter"),
+                    "BuoyForce": s.get("BuoyForce"),
+                }
+
+            # ✅ Buoyline2는 "있을 때만" 섹션 자체를 추가 저장
+            if "buoyline2" in st:
+                s = st["buoyline2"]
+                data["Buoyline2"] = {
+                    "Buoy2YoungModule": s.get("Buoy2YoungModule"),
+                    "RHO": s.get("RHO"),
+                    "Buoy2_diameter": s.get("Buoy2_diameter"),
+                    "BuoyForce": s.get("BuoyForce"),
+                }
+
+            if "anchor line 1" in st:
+                s = st["anchor line 1"]
+                data["Anchor_A"] = {
+                    "AnchorAYoungModule": s.get("AnchorAYoungModule"),
+                    "RHO": s.get("RHO"),
+                    "AnchorA_diameter": s.get("AnchorA_diameter"),
+                }
+
+            if "anchor line 2" in st:
+                s = st["anchor line 2"]
+                data["Anchor_B"] = {
+                    "AnchorBYoungModule": s.get("AnchorBYoungModule"),
+                    "RHO": s.get("RHO"),
+                    "AnchorB_diameter": s.get("AnchorB_diameter"),
+                }
+
+            if "mooring line" in st:
+                s = st["mooring line"]
+                data["Mooring_line"] = {
+                    "MooringYoungModule": s.get("MooringYoungModule"),
+                    "RHO": s.get("RHO"),
+                    "Mooring_diameter": s.get("Mooring_diameter"),
+                }
+
+            if "mooring frame" in st:
+                s = st["mooring frame"]
+                data["Mooring_frame"] = {
+                    "MoorFrameYoungModule": s.get("MoorFrameYoungModule"),
+                    "RHO": s.get("RHO"),
+                    "MoorFrame_diameter": s.get("MoorFrame_diameter"),
                 }
 
             # 🔸 Save 자동 경로 지정: v2024/Fish_Cage/asterinput/materials.py

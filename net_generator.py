@@ -272,21 +272,21 @@ def generate_net_nodes_and_edges(
                     bottom_faces.append([a, b, c, d])
 
     # 측면 사각(위에서 만든 surfs) + 바닥(삼각/사각) 모두 합치기
-    surfs.extend(bottom_faces)
+    surfs_netting = []
+    for face in surfs:          # 측면 그물 패널마다
+        surfs_netting.append([n + 1 for n in face] + ['s'])   # 노드 인덱스를 1증가 후 's' 태그 추가
+    for face in bottom_faces:   # 바닥 그물 패널마다
+        surfs_netting.append([n + 1 for n in face] + ['b'])   # 노드 인덱스를 1증가 후 'b' 태그 추가
 
-    # ↓↓↓ 저장 블록에서 surfs_netting으로 기록되도록 변수 이름만 맞춰줌
-    surfs = [[n + 1 for n in s] for s in surfs]
-    surfs_netting = surfs
-
-    # 전체 점/엣지 저장: net_points.json
-    # 전체 점/엣지 저장: net_points.json (+surfs_netting)
+    # net_points.json 파일에 저장 (points, edges 등과 함께)
     with open("Fish_Cage/net_points.json", "w", encoding="utf-8") as f:
         json.dump({
             "points": points,
             "edges": edges,
-            "surfs_netting": surfs_netting,                  # ★ 패널 저장(삼각/사각 혼재)
+            "surfs_netting": surfs_netting,  # ★ 각 패널의 끝에 태그 포함
             "z_float": float(z_float),
-            "z_weight": float(z_weight)
+            "z_weight": float(z_weight),
+            "numerical_half_mesh_size": half_mesh_size  # ← 이 줄 추가
         }, f, indent=2, ensure_ascii=False)
 
     print("✅ side_net.json / bottom_net.json (좌표) / net_points.json(+surfs) saved")

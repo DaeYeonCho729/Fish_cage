@@ -5,9 +5,26 @@ save_interval = 0.01
 save_step = int(save_interval / dt)
 
 loadr = []
-loadr.append(_F(CHARGE=gF), )
+# loadr.append(_F(CHARGE=gF), )
 loadr.append(_F(CHARGE=fixed), )
 loadr.append(_F(CHARGE=sinkF1), )
+loadr.append(_F(CHARGE=sinkF2), )
+loadr.append(_F(CHARGE=sinkF3), )
+loadr.append(_F(CHARGE=sinkF4), )
+
+if not S_a:
+    comp = (
+        _F(DEFORMATION='GROT_GDEP', GROUP_MA=('NETTWIN','MOORFRM','BRIDLE','SIDEROPE','BUOYLN1','ANCHL1','ANCHL2'), RELATION='CABLE'),
+        _F(DEFORMATION='PETIT',     GROUP_MA=('FLOATER', 'BRACKET', 'BOTRING'), RELATION='ELAS'),
+    )
+    obs_groups = ('NETTWIN','FLOATER','BRACKET','BOTRING','MOORFRM','BRIDLE','SIDEROPE','BUOYLN1','ANCHL1','ANCHL2',)
+else:
+    comp = (
+        _F(DEFORMATION='GROT_GDEP', GROUP_MA=('NETTWIN','BOTRING','MOORFRM','BRIDLE','SIDEROPE','BUOYLN1','ANCHL1','ANCHL2'), RELATION='CABLE'),
+        _F(DEFORMATION='PETIT',     GROUP_MA=('FLOATER','BRACKET'), RELATION='ELAS'),
+    )
+    obs_groups = ('NETTWIN','FLOATER','BRACKET','BOTRING','MOORFRM','BRIDLE','SIDEROPE','BUOYLN1','ANCHL1','ANCHL2',)
+
 
 
 t1 = time.time()
@@ -15,23 +32,17 @@ if k == 0:
     resn = DYNA_NON_LINE(
         CARA_ELEM=elemprop,
         CHAM_MATER=fieldmat,
-        # ARCHIVAGE=_F(PAS_ARCH=1,),
-        COMPORTEMENT=(
-            _F(DEFORMATION='GROT_GDEP',
-               GROUP_MA=('NETTWIN',),
-               RELATION='CABLE'),
-            _F(DEFORMATION='PETIT',
-               GROUP_MA=('FLOATER', 'BRACKET', 'BOTRING'),
-               RELATION='ELAS'),
-        ),
+        COMPORTEMENT=comp,  
         CONVERGENCE=_F(ITER_GLOB_MAXI=100,
                        RESI_GLOB_RELA=1e-3),
         EXCIT=(loadr),
-        OBSERVATION=_F(GROUP_MA=('NETTWIN','FLOATER', 'BRACKET', 'BOTRING'),
-                        NOM_CHAM='DEPL',
-                        NOM_CMP=('DX', 'DY', 'DZ'),
-                        INST=k+dt,
-                        OBSE_ETAT_INIT='NON'),
+        OBSERVATION=_F(
+            GROUP_MA=obs_groups,
+            NOM_CHAM='DEPL',
+            NOM_CMP=('DX', 'DY', 'DZ'),
+            INST=k+dt,
+            OBSE_ETAT_INIT='NON'
+        ),
         SCHEMA_TEMPS=_F(FORMULATION='DEPLACEMENT',
                         SCHEMA="HHT",
                         ALPHA=-0.3),
@@ -53,27 +64,26 @@ else:
         MODELE=model,
         FORCE_NODALE=tuple(force_list)
     )
-    loadr.append(_F(CHARGE=load_dynamic))
+    
+    if len(loadr) == 4:
+        loadr.append(_F(CHARGE=load_dynamic))
+    else:
+        loadr[4] = _F(CHARGE=load_dynamic)
 
     resn = DYNA_NON_LINE(CARA_ELEM=elemprop,
                          CHAM_MATER=fieldmat,
                          ETAT_INIT=_F(EVOL_NOLI=resn),
-                        #  ARCHIVAGE=_F( PAS_ARCH=10,),
-                         COMPORTEMENT=(_F(DEFORMATION='GROT_GDEP',
-                                          GROUP_MA=('NETTWIN',),
-                                          RELATION='CABLE'),
-                                       _F(DEFORMATION='PETIT',
-                                          GROUP_MA=('FLOATER', 'BRACKET', 'BOTRING'),
-                                          RELATION='ELAS'),
-                                       ),
+                         COMPORTEMENT=comp,
                          CONVERGENCE=_F(ITER_GLOB_MAXI=100,
                                         RESI_GLOB_RELA=1e-3),
                          EXCIT=(loadr),
-                        OBSERVATION=_F(GROUP_MA=('NETTWIN','FLOATER', 'BRACKET', 'BOTRING'),
-                                        NOM_CHAM='DEPL',
-                                         NOM_CMP=('DX', 'DY', 'DZ'),
-                                         INST=k+dt,
-                                         OBSE_ETAT_INIT='NON'),
+                         OBSERVATION=_F(
+                             GROUP_MA=obs_groups,
+                             NOM_CHAM='DEPL',
+                             NOM_CMP=('DX', 'DY', 'DZ'),
+                             INST=k+dt,
+                             OBSE_ETAT_INIT='NON'
+                         ),
                          SCHEMA_TEMPS=_F(FORMULATION='DEPLACEMENT',
                                          SCHEMA="HHT",
                                          ALPHA=-0.3
@@ -143,7 +153,7 @@ print(f"[TIME] aster_module         : {t8 - t7:.6f} sec")
 
 
 t9 = time.time()
-u = np.ones((NO_net, 3)) * current_input
+u_all = np.ones((NO_cage, 3)) * current_input
 
 if k == 0:
     netting.init_wake(posi, current_input) 
@@ -155,14 +165,60 @@ print(f"[TIME] wake update           : {t10 - t9:.6f} sec")
 
 t11 = time.time()
 
-f_dyn  = netting.force_on_element(posi, u, velo_nodes, elev)
-f_buoy = netting.cal_buoy_force(posi, elev)
+net_dyn  = netting.force_on_element(posi, u_all[s_net],  velo_nodes, elev)
+net_buoy = netting.cal_buoy_force(posi, elev)
+
+flo_dyn  = floater_morison.force_on_element(posi, u_all[s_flo],  velo_nodes, elev)
+flo_buoy = floater_morison.cal_buoy_force(posi, elev)
+
+btr_dyn  = bottomring_morison.force_on_element(posi, u_all[s_btr],  velo_nodes, elev)
+btr_buoy = bottomring_morison.cal_buoy_force(posi, elev)
+
+siro_dyn  = siderope_morison.force_on_element(posi, u_all[s_sir],  velo_nodes, elev)
+siro_buoy = siderope_morison.cal_buoy_force(posi, elev)
+
+bri_dyn  = bridle_morison.force_on_element(posi, u_all[s_bri],  velo_nodes, elev)
+bri_buoy = bridle_morison.cal_buoy_force(posi, elev)
+
+buoyl_dyn  = buoyline_morison.force_on_element(posi, u_all[s_buyl],  velo_nodes, elev)
+buoyl_buoy = buoyline_morison.cal_buoy_force(posi, elev)
+
+ancla_dyn  = anchora_morison.force_on_element(posi, u_all[s_aa],  velo_nodes, elev)
+ancla_buoy = anchora_morison.cal_buoy_force(posi, elev)
+
+anclb_dyn  = anchorb_morison.force_on_element(posi, u_all[s_ab],  velo_nodes, elev)
+anclb_buoy = anchorb_morison.cal_buoy_force(posi, elev)
+
+moor_dyn  = mooring_morison.force_on_element(posi, u_all[s_moor],  velo_nodes, elev)
+moor_buoy = mooring_morison.cal_buoy_force(posi, elev)
+
+bra_dyn  = braket_morison.force_on_element(posi, u_all[s_bra],  velo_nodes, elev)
+bra_buoy = braket_morison.cal_buoy_force(posi, elev)
 
 t12 = time.time()
 print(f"[TIME] force_on_element      : {t12 - t11:.6f} sec")
 
-f_total = f_dyn + f_buoy
-netting.hydro_total_forces = f_total
+net_total = net_dyn + net_buoy
+flo_total = flo_dyn + flo_buoy
+btr_total = btr_dyn + btr_buoy
+siro_total = siro_dyn + siro_buoy
+bri_total = bri_dyn + bri_buoy
+buoyl_total = buoyl_dyn + buoyl_buoy
+ancla_total = ancla_dyn + ancla_buoy
+anclb_total = anclb_dyn + anclb_buoy
+moor_total = moor_dyn + moor_buoy
+bra_total = bra_dyn + bra_buoy
+
+floater_morison.hydro_total_forces = flo_total
+netting.hydro_total_forces = net_total
+bottomring_morison.hydro_total_forces = btr_total
+siderope_morison.hydro_total_forces = siro_total
+buoyline_morison.hydro_total_forces = buoyl_total
+anchora_morison.hydro_total_forces = ancla_total
+anchorb_morison.hydro_total_forces = anclb_total
+mooring_morison.hydro_total_forces = moor_total
+braket_morison.hydro_total_forces = bra_total
+bridle_morison.hydro_total_forces = bri_total
 
 outdir = os.path.join(cwd, 'pythonOutput')
 os.makedirs(outdir, exist_ok=True)
@@ -173,7 +229,17 @@ os.makedirs(os.path.join(cwd, 'pythonOutput/N'), exist_ok=True)
 
 t13 = time.time()
 
-Fnh = netting.distribute_force(nodenumber)
+Fnh = (netting.distribute_force(nodenumber) 
+       + floater_morison.distribute_force(nodenumber) 
+       + bottomring_morison.distribute_force(nodenumber) 
+       + siderope_morison.distribute_force(nodenumber) 
+       + buoyline_morison.distribute_force(nodenumber)
+       + anchora_morison.distribute_force(nodenumber)
+       + anchorb_morison.distribute_force(nodenumber)
+       + mooring_morison.distribute_force(nodenumber)
+       + braket_morison.distribute_force(nodenumber)
+       + bridle_morison.distribute_force(nodenumber)
+       )
 
 t14 = time.time()
 print(f"[TIME] distribute_force      : {t14 - t13:.6f} sec")
@@ -184,11 +250,6 @@ t15 = time.time()
 
 if k % save_step == 0:
 
-    np.savetxt(
-        os.path.join(outdir, f'netting_{round(k*dt,3)}.txt'),
-        f_total,
-        fmt='%.3e'
-    )
     np.savetxt(os.path.join(cwd, 'pythonOutput/Fnh/Fnh_' +
                             str(round((k)*dt, 3))+'.txt'), Fnh, fmt='%.3e')
     np.savetxt(os.path.join(cwd, 'pythonOutput/posi/posi_' +
@@ -201,9 +262,12 @@ if k % save_step == 0:
 
     inst_now = (k+1) * dt
 
+    grp_calc = ('NETTWIN','FLOATER','BRACKET','BOTRING', 'MOORFRM','BRIDLE','SIDEROPE','BUOYLN1','ANCHL1','ANCHL2')
+
+
     stat1 = CALC_CHAMP(
         RESULTAT=resn,
-        GROUP_MA=('NETTWIN','FLOATER', 'BRACKET', 'BOTRING',),
+        GROUP_MA=grp_calc,
         CONTRAINTE=('EFGE_ELGA', 'EFGE_ELNO'),
     )
 

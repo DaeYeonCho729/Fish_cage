@@ -1,0 +1,924 @@
+setting '--memory' value to 180000.00 MB (keyword RESERVE_MEMOIRE)
+copying 'C:\\Users\\user\\Desktop\\v2024\\Fish_cage\\asterinput\\fish_cage.unv' to 'fort.20'...
+copying 'C:\\Users\\user\\Desktop\\v2024\\Fish_cage\\asterinput\\meshinfo.py' to 'fort.90'...
+copying 'C:\\Users\\user\\Desktop\\v2024\\Fish_cage\\asterinput\\materials.py' to 'fort.91'...
+copying 'C:\\Users\\user\\Desktop\\v2024\\Fish_cage\\asterinput\\aster_simulation2.py' to 'fort.93'...
+Ouverture en écriture du fichier ./vola.1
+
+<INFO> Démarrage de l'exécution.
+
+                                                                                   
+   ___         _         _       _            __      ___         _                
+  / __|___  __| |___    /_\   __| |_ ___ _ _  \ \    / (_)_ _  __| |_____ __ _____ 
+ | (__/ _ \/ _` / -_)  / _ \ (_-<  _/ -_) '_|  \ \/\/ /| | ' \/ _` / _ \ V  V (_-< 
+  \___\___/\__,_\___| /_/ \_\/__/\__\___|_|     \_/\_/ |_|_||_\__,_\___/\_/\_//__/ 
+                                                 https://code-aster-windows.com    
+                       -- CODE_ASTER -- VERSION : DÉVELOPPEMENT (unstable) --                       
+                               Version 17.2.18 modifiée le 08/05/2025                               
+                          révision 15d5b0bcd8a8 - branche 'windows-compat'                          
+                                   Copyright EDF R&D 1991 - 2026                                    
+                                                                                                    
+                              Exécution du : Tue Feb 24 17:35:10 2026                               
+                                        Nom de la machine :                                         
+                                          DESKTOP-SBNQGCA                                           
+                                        Architecture : 64bit                                        
+                                     Type de processeur : AMD64                                     
+                                      Système d'exploitation :                                      
+                                     Windows-10-10.0.26100-SP0                                      
+                                  Langue des messages : ko (UTF-8)                                  
+                                     Version de Python : 3.7.2                                      
+                                     Version de NumPy : 1.16.1                                      
+                                     Parallélisme MPI : inactif                                     
+                                    Parallélisme OpenMP : actif                                     
+                              Nombre de processus OpenMP utilisés : 8                               
+                               Version de la librairie HDF5 : 1.10.9                                
+                                Version de la librairie MED : 4.1.1                                 
+                                 Librairie MFront : non disponible                                  
+                               Version de la librairie MUMPS : 5.6.2                                
+                                  Librairie PETSc : non disponible                                  
+                               Version de la librairie SCOTCH : 7.0.3                               
+
+starting the execution...
+Valeur initiale du temps CPU maximum =   99999999 secondes
+  Valeur du temps CPU maximum passé aux
+commandes =   89999999 secondes
+  Réserve CPU prévue = 9999999 secondes
+
+Ouverture en écriture du fichier ./glob.1
+
+Ouverture en écriture du fichier ./vola.1
+
+Ouverture en lecture du fichier
+C:\Users\user\AppData\Local\code_aster\v2024\17.2\bin\..\lib\aster/elem.1
+
+Nom de la base                          :  ELEMBASE
+     Créée avec la version                   : 
+17.02.18
+     Nombre d'enregistrements utilisés       :  46
+     Nombre d'enregistrements maximum   
+    :  512
+     Nombre d'enregistrements par fichier    :  512
+     Longueur d'enregistrement
+(octets)      :  819200
+     Nombre d'identificateurs utilisés       :  123
+     Taille maximum du
+répertoire            :  300
+     Pourcentage d'utilisation du répertoire :  41 %
+
+Ouverture en lecture du fichier
+C:\Users\user\AppData\Local\code_aster\v2024\17.2\bin\..\lib\aster/elem.1
+
+Nom de la base                          :  ELEMBASE
+     Nombre d'enregistrements utilisés       : 
+46
+     Nombre d'enregistrements maximum        :  512
+     Nombre d'enregistrements par fichier   
+:  512
+     Longueur d'enregistrement (octets)      :  819200
+     Nombre total d'accès en lecture  
+      :  64
+     Volume des accès en lecture             :         50.00 Mo.
+     Nombre total
+d'accès en écriture        :  0
+     Volume des accès en écriture            :          0.00 Mo.
+   
+ Nombre d'identificateurs utilisés       :  123
+     Taille maximum du répertoire            :  300
+
+    Pourcentage d'utilisation du répertoire :  41 %
+
+Relecture des catalogues des éléments faite.
+
+Fin de lecture (durée  0.000000  s.) 
+
+                     Mémoire limite pour l'allocation dynamique : 180512.00 Mo                      
+                              ajouté à l'initialisation du processus :                              
+                                             278.84 Mo                                              
+                              Limite cible du processus : 180790.84 Mo                              
+                         Taille limite des fichiers d'échange : 2048.00 Go                          
+C:\Users\user\Desktop\v2024\Fish_cage\asterinput\aster_simulation1.py:26: DeprecationWarning: This feature is obsolete, 'PAR_LOT' has been removed.
+  current_input = materials['simulation']['current']
+# Mémoire (Mo) :   278.84 /   271.16 /   210.15 /   185.10 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0001   user+syst:        0.02s (syst:        0.08s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt29
+# ----------------------------------------------------------------------------------------------
+# Commande #0002 de aster_simulation1.py.changed.py, ligne 29
+INCLUDE(ALARME='OUI',
+        INFO=1,
+        UNITE=90)
+
+# Mémoire (Mo) :   284.91 /   273.47 /   210.15 /   185.10 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0002   user+syst:        0.00s (syst:        0.02s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt30
+# ----------------------------------------------------------------------------------------------
+# Commande #0003 de aster_simulation1.py.changed.py, ligne 30
+INCLUDE(ALARME='OUI',
+        INFO=1,
+        UNITE=91)
+
+# Mémoire (Mo) :   284.91 /   273.47 /   210.15 /   185.10 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0003   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt162
+# ----------------------------------------------------------------------------------------------
+# Commande #0004 de aster_simulation1.py.changed.py, ligne 162
+mesh = LIRE_MAILLAGE(CREA_GROUP_COUL='NON',
+                     FORMAT='IDEAS',
+                     INFO=1,
+                     UNITE=20,
+                     VERI_MAIL=_F(APLAT=0.001,
+                                  VERIF='OUI'))
+
+ ON NE TRAITE PAS LE DATASET:                  164
+ NOMBRE DE NOEUDS :                 1045
+ NOMBRE DE MAILLES :                 2280
+Vérification du maillage.
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MODELISA8_13>                                                                             ║
+ ║                                                                                                ║
+ ║ Les mailles 1537 et 817 sont doubles (même noeuds en support).                                 ║
+ ║     Type de maille : SEG2                                                                      ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MODELISA8_13>                                                                             ║
+ ║                                                                                                ║
+ ║ Les mailles 1538 et 818 sont doubles (même noeuds en support).                                 ║
+ ║     Type de maille : SEG2                                                                      ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MODELISA8_13>                                                                             ║
+ ║                                                                                                ║
+ ║ Les mailles 1539 et 819 sont doubles (même noeuds en support).                                 ║
+ ║     Type de maille : SEG2                                                                      ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MODELISA8_13>                                                                             ║
+ ║                                                                                                ║
+ ║ Les mailles 1540 et 820 sont doubles (même noeuds en support).                                 ║
+ ║     Type de maille : SEG2                                                                      ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MODELISA8_13>                                                                             ║
+ ║                                                                                                ║
+ ║ Les mailles 1541 et 821 sont doubles (même noeuds en support).                                 ║
+ ║     Type de maille : SEG2                                                                      ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <CATAMESS_41>                                                                              ║
+ ║                                                                                                ║
+ ║ Le message d'alarme 'MODELISA8_13' a été émis 5 fois, il ne sera plus affiché.                 ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MODELISA4_8>                                                                              ║
+ ║                                                                                                ║
+ ║ -> Phase de vérification du maillage : présence de mailles doubles (ou triples, ...)           ║
+ ║      Les                                                                                       ║
+ ║ mailles multiples sont des mailles de noms différents qui ont la même connectivité             ║
+ ║      (elles                                                                                    ║
+ ║ s'appuient sur les mêmes noeuds).                                                              ║
+ ║                                                                                                ║
+ ║   -> Risque & Conseil :                                                                        ║
+ ║      Le risque est de modéliser 2                                                              ║
+ ║ fois (ou plus) l'espace. On peut par exemple avoir                                             ║
+ ║      un modèle 2 fois trop lourd ou 2 fois                                                     ║
+ ║ trop rigide.                                                                                   ║
+ ║      Remarque : les mailles concernées sont imprimées dans le fichier "message".               ║
+ ║                                                                                                ║
+ ║     Sur ce maillage, il est imprudent d'affecter des quantités avec le mot clé TOUT='OUI'.     ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+------------ MAILLAGE 00000001 - IMPRESSIONS NIVEAU  1 ------------
+
+         AUTEUR=INTERFACE_IDEAS                 DATE=24/02/2026                 
+
+NOMBRE DE NOEUDS                        1045
+
+NOMBRE DE MAILLES                       2280
+                              SEG2                 2280
+
+NOMBRE DE GROUPES DE NOEUDS             1054
+
+NOMBRE DE GROUPES DE MAILLES              10
+
+--------------------------------------------------------------------------------
+
+# Résultat commande #0004 (LIRE_MAILLAGE): mesh ('<00000001>') de type <Mesh>
+# Mémoire (Mo) :   284.91 /   274.78 /   210.15 /   185.10 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0004   user+syst:        0.06s (syst:        0.02s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt200
+# ----------------------------------------------------------------------------------------------
+# Commande #0008 de aster_simulation1.py.changed.py, ligne 200
+model = AFFE_MODELE(AFFE=(_F(GROUP_MA=('NETTWIN', 'SIDEROPE', 'BUOYLN1', 'ANCHL1', 'BRIDLE', 'ANCHL2', 'MOORFRM'),
+                             MODELISATION='CABLE',
+                             PHENOMENE='MECANIQUE'),
+                          _F(GROUP_MA=('FLOATER', 'BRACKET', 'BOTRING'),
+                             MODELISATION='POU_D_E',
+                             PHENOMENE='MECANIQUE')),
+                    DISTRIBUTION=_F(METHODE='SOUS_DOMAINE',
+                                    PARTITIONNEUR='METIS'),
+                    INFO=1,
+                    MAILLAGE=mesh,
+                    VERI_JACOBIEN='OUI',
+                    VERI_NORM_IFS='OUI',
+                    VERI_PLAN='OUI')
+
+Sur les 2280 mailles du maillage 00000001, on a demandé l'affectation de 2280, on a pu en affecter
+2280.
+Modélisation     Formulation      Type maille  Élément fini     Nombre
+CABLE            _                SEG2         MECABL2          2160
+POU_D_E          _                SEG2         MECA_POU_D_E     120
+#2      Calculs elementaires et assemblages               CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.00
+# Résultat commande #0008 (AFFE_MODELE): model ('<00000002>') de type <Model>
+# Mémoire (Mo) :   284.91 /   276.49 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0008   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt269
+# ----------------------------------------------------------------------------------------------
+# Commande #0009 de aster_simulation1.py.changed.py, ligne 269
+elemprop = AFFE_CARA_ELEM(CABLE=(_F(GROUP_MA='NETTWIN',
+                                    N_INIT=10.0,
+                                    SECTION=0.0012566370614359172),
+                                 _F(GROUP_MA='BUOYLN1',
+                                    N_INIT=10.0,
+                                    SECTION=0.0063617251235193305),
+                                 _F(GROUP_MA='ANCHL1',
+                                    N_INIT=10.0,
+                                    SECTION=0.0063617251235193305),
+                                 _F(GROUP_MA='BRIDLE',
+                                    N_INIT=10.0,
+                                    SECTION=0.031415926535897934),
+                                 _F(GROUP_MA='ANCHL2',
+                                    N_INIT=10.0,
+                                    SECTION=0.12566370614359174),
+                                 _F(GROUP_MA='MOORFRM',
+                                    N_INIT=10.0,
+                                    SECTION=0.12566370614359174),
+                                 _F(GROUP_MA='SIDEROPE',
+                                    N_INIT=10.0,
+                                    SECTION=0.0063617251235193305)),
+                          INFO=1,
+                          MODELE=model,
+                          POUTRE=(_F(CARA=('R', 'EP'),
+                                     GROUP_MA='FLOATER',
+                                     MODI_METRIQUE='NON',
+                                     SECTION='CERCLE',
+                                     TUYAU_NCOU=3,
+                                     TUYAU_NSEC=16,
+                                     VALE=(0.5, 0.05),
+                                     VARI_SECT='CONSTANT'),
+                                  _F(CARA='R',
+                                     GROUP_MA='BOTRING',
+                                     MODI_METRIQUE='NON',
+                                     SECTION='CERCLE',
+                                     TUYAU_NCOU=3,
+                                     TUYAU_NSEC=16,
+                                     VALE=0.1,
+                                     VARI_SECT='CONSTANT'),
+                                  _F(CARA='R',
+                                     GROUP_MA='BRACKET',
+                                     MODI_METRIQUE='NON',
+                                     SECTION='CERCLE',
+                                     TUYAU_NCOU=3,
+                                     TUYAU_NSEC=16,
+                                     VALE=0.2,
+                                     VARI_SECT='CONSTANT')))
+
+
+     LE MODELE 00000002 CONTIENT : 
+                                      120 ELEMENT(S) POUTRE          
+                                     2160 ELEMENT(S) CABLE           
+#2      Calculs elementaires et assemblages               CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.00
+# Résultat commande #0009 (AFFE_CARA_ELEM): elemprop ('<00000003>') de type
+<ElementaryCharacteristics>
+# Dépend de :
+# - model ('<00000002>') de type <Model>
+# Mémoire (Mo) :   284.91 /   278.93 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0009   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt328
+# ----------------------------------------------------------------------------------------------
+# Commande #0010 de aster_simulation1.py.changed.py, ligne 328
+net = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                    ELAS=_F(B_ENDOGE=0.0,
+                            COEF_AMOR=1.0,
+                            E=1000000000.0,
+                            K_DESSIC=0.0,
+                            NU=0.3,
+                            RHO=1150.0),
+                    INFO=1)
+
+# Résultat commande #0010 (DEFI_MATERIAU): net ('<00000004>') de type <Material>
+# Mémoire (Mo) :   284.91 /   279.11 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0010   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt337
+# ----------------------------------------------------------------------------------------------
+# Commande #0011 de aster_simulation1.py.changed.py, ligne 337
+buoyline = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                         ELAS=_F(B_ENDOGE=0.0,
+                                 COEF_AMOR=1.0,
+                                 E=100000000000.0,
+                                 K_DESSIC=0.0,
+                                 NU=0.3,
+                                 RHO=980.0),
+                         INFO=1)
+
+# Résultat commande #0011 (DEFI_MATERIAU): buoyline ('<00000005>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0011   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt346
+# ----------------------------------------------------------------------------------------------
+# Commande #0012 de aster_simulation1.py.changed.py, ligne 346
+anchorline1 = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                            ELAS=_F(B_ENDOGE=0.0,
+                                    COEF_AMOR=1.0,
+                                    E=100000000000.0,
+                                    K_DESSIC=0.0,
+                                    NU=0.3,
+                                    RHO=980.0),
+                            INFO=1)
+
+# Résultat commande #0012 (DEFI_MATERIAU): anchorline1 ('<00000006>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0012   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt355
+# ----------------------------------------------------------------------------------------------
+# Commande #0013 de aster_simulation1.py.changed.py, ligne 355
+anchorline2 = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                            ELAS=_F(B_ENDOGE=0.0,
+                                    COEF_AMOR=1.0,
+                                    E=1000000000.0,
+                                    K_DESSIC=0.0,
+                                    NU=0.3,
+                                    RHO=980.0),
+                            INFO=1)
+
+# Résultat commande #0013 (DEFI_MATERIAU): anchorline2 ('<00000007>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0013   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt364
+# ----------------------------------------------------------------------------------------------
+# Commande #0014 de aster_simulation1.py.changed.py, ligne 364
+bridle = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                       ELAS=_F(B_ENDOGE=0.0,
+                               COEF_AMOR=1.0,
+                               E=100000000000.0,
+                               K_DESSIC=0.0,
+                               NU=0.3,
+                               RHO=980.0),
+                       INFO=1)
+
+# Résultat commande #0014 (DEFI_MATERIAU): bridle ('<00000008>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0014   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt373
+# ----------------------------------------------------------------------------------------------
+# Commande #0015 de aster_simulation1.py.changed.py, ligne 373
+mooringframe = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                             ELAS=_F(B_ENDOGE=0.0,
+                                     COEF_AMOR=1.0,
+                                     E=1000000000.0,
+                                     K_DESSIC=0.0,
+                                     NU=0.3,
+                                     RHO=980.0),
+                             INFO=1)
+
+# Résultat commande #0015 (DEFI_MATERIAU): mooringframe ('<00000009>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0015   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt382
+# ----------------------------------------------------------------------------------------------
+# Commande #0016 de aster_simulation1.py.changed.py, ligne 382
+siderope = DEFI_MATERIAU(CABLE=_F(EC_SUR_E=0.0001),
+                         ELAS=_F(B_ENDOGE=0.0,
+                                 COEF_AMOR=1.0,
+                                 E=100000000000.0,
+                                 K_DESSIC=0.0,
+                                 NU=0.3,
+                                 RHO=980.0),
+                         INFO=1)
+
+# Résultat commande #0016 (DEFI_MATERIAU): siderope ('<0000000a>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0016   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt391
+# ----------------------------------------------------------------------------------------------
+# Commande #0017 de aster_simulation1.py.changed.py, ligne 391
+floater = DEFI_MATERIAU(ELAS=_F(B_ENDOGE=0.0,
+                                COEF_AMOR=1.0,
+                                E=1000000000.0,
+                                K_DESSIC=0.0,
+                                NU=0.3,
+                                RHO=950.0),
+                        INFO=1)
+
+# Résultat commande #0017 (DEFI_MATERIAU): floater ('<0000000b>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0017   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt399
+# ----------------------------------------------------------------------------------------------
+# Commande #0018 de aster_simulation1.py.changed.py, ligne 399
+braket = DEFI_MATERIAU(ELAS=_F(B_ENDOGE=0.0,
+                               COEF_AMOR=1.0,
+                               E=1000000000.0,
+                               K_DESSIC=0.0,
+                               NU=0.3,
+                               RHO=950.0),
+                       INFO=1)
+
+# Résultat commande #0018 (DEFI_MATERIAU): braket ('<0000000c>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0018   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt408
+# ----------------------------------------------------------------------------------------------
+# Commande #0019 de aster_simulation1.py.changed.py, ligne 408
+bottomring = DEFI_MATERIAU(ELAS=_F(B_ENDOGE=0.0,
+                                   COEF_AMOR=1.0,
+                                   E=200000000000.0,
+                                   K_DESSIC=0.0,
+                                   NU=0.3,
+                                   RHO=8000.0),
+                           INFO=1)
+
+# Résultat commande #0019 (DEFI_MATERIAU): bottomring ('<0000000d>') de type <Material>
+# Mémoire (Mo) :   284.91 /   278.53 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0019   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt435
+# ----------------------------------------------------------------------------------------------
+# Commande #0020 de aster_simulation1.py.changed.py, ligne 435
+fieldmat = AFFE_MATERIAU(AFFE=(_F(GROUP_MA='NETTWIN',
+                                  MATER=net),
+                               _F(GROUP_MA='FLOATER',
+                                  MATER=floater),
+                               _F(GROUP_MA='BRACKET',
+                                  MATER=braket),
+                               _F(GROUP_MA='BOTRING',
+                                  MATER=bottomring),
+                               _F(GROUP_MA='MOORFRM',
+                                  MATER=mooringframe),
+                               _F(GROUP_MA='BRIDLE',
+                                  MATER=bridle),
+                               _F(GROUP_MA='SIDEROPE',
+                                  MATER=siderope),
+                               _F(GROUP_MA='BUOYLN1',
+                                  MATER=buoyline),
+                               _F(GROUP_MA='ANCHL1',
+                                  MATER=anchorline1),
+                               _F(GROUP_MA='ANCHL2',
+                                  MATER=anchorline2)),
+                         INFO=1,
+                         MODELE=model)
+
+# Résultat commande #0020 (AFFE_MATERIAU): fieldmat ('<0000000e>') de type <MaterialField>
+# Mémoire (Mo) :   284.91 /   278.67 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0020   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+C:\Users\user\Desktop\v2024\Fish_cage\asterinput\aster_simulation1.py:482: DeprecationWarning: This feature has a new implementation, "DLL_IMPO/LIAISON='ENCASTRE'" will be removed in the future. Use BLOCAGE = ('DEPLACEMENT', 'ROTATION')
+  ]
+
+.. _stg1_txt482
+# ----------------------------------------------------------------------------------------------
+# Commande #0021 de aster_simulation1.py.changed.py, ligne 482
+fixed = AFFE_CHAR_MECA(DDL_IMPO=_F(BLOCAGE=('DEPLACEMENT', 'ROTATION'),
+                                   GROUP_NO='ANCHORN'),
+                       DOUBLE_LAGRANGE='OUI',
+                       INFO=1,
+                       MODELE=model,
+                       SYNTAXE='NON',
+                       VERI_AFFE='OUI',
+                       VERI_NORM='OUI')
+
+# Résultat commande #0021 (AFFE_CHAR_MECA): fixed ('<0000000f>') de type <MechanicalLoadReal>
+# Mémoire (Mo) :   284.91 /   279.03 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0021   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt508
+# ----------------------------------------------------------------------------------------------
+# Commande #0022 de aster_simulation1.py.changed.py, ligne 508
+sinkF1 = AFFE_CHAR_MECA(DOUBLE_LAGRANGE='OUI',
+                        FORCE_NODALE=_F(FX=0,
+                                        FY=0,
+                                        FZ=-2940.0,
+                                        GROUP_NO='BOTNCEN'),
+                        INFO=1,
+                        MODELE=model,
+                        SYNTAXE='NON',
+                        VERI_AFFE='OUI',
+                        VERI_NORM='OUI')
+
+# Résultat commande #0022 (AFFE_CHAR_MECA): sinkF1 ('<00000010>') de type <MechanicalLoadReal>
+# Mémoire (Mo) :   284.91 /   279.09 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0022   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt533
+# ----------------------------------------------------------------------------------------------
+# Commande #0023 de aster_simulation1.py.changed.py, ligne 533
+sinkF2 = AFFE_CHAR_MECA(DOUBLE_LAGRANGE='OUI',
+                        FORCE_NODALE=_F(FX=0,
+                                        FY=0,
+                                        FZ=0,
+                                        GROUP_NO='BRNODE'),
+                        INFO=1,
+                        MODELE=model,
+                        SYNTAXE='NON',
+                        VERI_AFFE='OUI',
+                        VERI_NORM='OUI')
+
+# Résultat commande #0023 (AFFE_CHAR_MECA): sinkF2 ('<00000011>') de type <MechanicalLoadReal>
+# Mémoire (Mo) :   284.91 /   279.28 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0023   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt550
+# ----------------------------------------------------------------------------------------------
+# Commande #0024 de aster_simulation1.py.changed.py, ligne 550
+sinkF3 = AFFE_CHAR_MECA(DOUBLE_LAGRANGE='OUI',
+                        FORCE_NODALE=_F(FX=0,
+                                        FY=0,
+                                        FZ=400,
+                                        GROUP_NO='BUOY1'),
+                        INFO=1,
+                        MODELE=model,
+                        SYNTAXE='NON',
+                        VERI_AFFE='OUI',
+                        VERI_NORM='OUI')
+
+# Résultat commande #0024 (AFFE_CHAR_MECA): sinkF3 ('<00000012>') de type <MechanicalLoadReal>
+# Mémoire (Mo) :   284.91 /   279.37 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0024   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt554
+# ----------------------------------------------------------------------------------------------
+# Commande #0025 de aster_simulation1.py.changed.py, ligne 554
+listr = DEFI_LIST_REEL(DEBUT=0.0,
+                       INFO=1,
+                       INTERVALLE=_F(JUSQU_A=100.0,
+                                     PAS=0.01))
+
+# Résultat commande #0025 (DEFI_LIST_REEL): listr ('<00000013>') de type <ListOfFloats>
+# Mémoire (Mo) :   284.91 /   279.44 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0025   user+syst:        0.02s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt557
+# ----------------------------------------------------------------------------------------------
+# Commande #0026 de aster_simulation1.py.changed.py, ligne 557
+times = DEFI_LIST_INST(ADAPTATION=_F(CRIT_COMP='LE',
+                                     EVENEMENT='SEUIL',
+                                     MODE_CALCUL_TPLUS='FIXE',
+                                     NB_INCR_SEUIL=2,
+                                     NOM_PARA='NB_ITER_NEWTON',
+                                     PCENT_AUGM=100.0),
+                       DEFI_LIST=_F(LIST_INST=listr,
+                                    NB_PAS_MAXI=1000000,
+                                    PAS_MINI=1e-08),
+                       ECHEC=_F(ACTION='DECOUPE',
+                                EVENEMENT='ERREUR',
+                                SUBD_METHODE='MANUEL',
+                                SUBD_NIVEAU=3,
+                                SUBD_PAS=4,
+                                SUBD_PAS_MINI=0.0),
+                       INFO=1,
+                       METHODE='AUTO')
+
+Gestion automatique de la liste d'instants.
+Paramètres de la gestion automatique de la liste d'instants.
+Pas minimum:         1E-08
+Pas maximum:
+          100
+Nombre de pas maximum: 1000000
+
+La liste d'instants contient 10001 pas de temps et le pas de temps minimum vaut          0.01.
+Il y a 1 événements.
+L'événement 1 est pour capturer les erreurs.
+Si cet événement se déclenche, on découpe le pas de temps.
+La découpe du pas de temps est manuelle.
+On découpe le pas de temps en 4 incréments jusqu'à ce que le niveau atteigne 3.
+Il y a 1 schémas d'adaptations du pas de temps.
+Le schéma d'adaptation 1 du pas de temps se déclenche pour un seuil donné.
+Le seuil est franchi quand, 2 fois de suite, on fait exactement ou moins de 0 itérations de Newton.
+Le mode de calcul de l'instant suivant est fixe.
+Le pas de temps suivant sera modifié de 100.00 %.
+# Résultat commande #0026 (DEFI_LIST_INST): times ('<00000014>') de type <TimesList>
+# Dépend de :
+# - listr ('<00000013>') de type <ListOfFloats>
+# Mémoire (Mo) :   284.91 /   280.23 /   210.15 /   198.60 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0026   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt560
+# ----------------------------------------------------------------------------------------------
+# Commande #0027 de aster_simulation1.py.changed.py, ligne 560
+INCLUDE(ALARME='OUI',
+        INFO=0,
+        UNITE=93)
+
+Liste des comportements
+
+Affecté sur 2160 éléments
+Relation                             : CABLE
+Déformation                          : GROT_GDEP
+Pas de régularisation visqueuse
+Pas de post-traitement à la fin du pas de temps
+Nombre total de variables internes   : 1
+V1 : VIDE
+Affecté sur 120 éléments
+Relation                             : ELAS
+Déformation                          : PETIT
+Pas de régularisation visqueuse
+Pas de post-traitement à la fin du pas de temps
+Nombre total de variables internes   : 1
+V1 : VIDE
+Le système linéaire à résoudre a 3471 degrés de liberté:
+   - 3423 sont des degrés de liberté
+physiques
+     (ils sont portés par 1045 noeuds du maillage)
+   - 48 sont les couples de paramètres
+de Lagrange associés
+     aux 24 relations linéaires dualisées.
+La matrice est de taille 3471 équations.
+  Elle contient 29418 termes non nuls si elle est
+symétrique et 55365 termes non nuls si elle n'est pas symétrique.
+  Soit un taux de remplissage de  
+0.460 %.
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <A> <MECANONLINE5_21>                                                                          ║
+ ║                                                                                                ║
+ ║ -> Critère de convergence est lâche !                                                          ║
+ ║   -> Risque & Conseil : La valeur de RESI_GLOB_RELA est                                        ║
+ ║ supérieure à 10-4.                                                                             ║
+ ║      Cela peut nuire à la qualité de la solution. Vous ne vérifiez pas                         ║
+ ║ l'équilibre de                                                                                 ║
+ ║      manière rigoureuse.                                                                       ║
+ ║                                                                                                ║
+ ║                                                                                                ║
+ ║ Ceci est une alarme. Si vous ne comprenez pas le sens de cette                                 ║
+ ║ alarme, vous pouvez obtenir des                                                                ║
+ ║ résultats inattendus !                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+Il n'y a pas d'état initial défini. On prend un état initial nul.
+Le champ <DEPL> est initialisé a zéro
+Le champ <SIEF_ELGA> est initialisé a zéro
+Le champ <VARI_ELGA> est initialisé a zéro
+Le champ <VITE> est initialisé a zéro
+Le champ <ACCE> est initialisé a zéro
+Le champ <STRX_ELGA> est initialisé a zéro
+On suppose qu'on part d'un état a vitesses nulles
+
+On estime une accélération initiale.
+
+L'état initial n'a pas d'accélération donnée.
+ On la calcule.
+ 
+Observations: il y aura, au maximum, 3135 observations à chaque instant sélectionné pour cela.
+
+Archivage de l'état initial
+Archivage des champs
+
+Champ stocké <DEPL> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+Champ stocké <SIEF_ELGA> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+Champ stocké <VARI_ELGA> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+Champ stocké <COMPORTEMENT> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+Champ stocké <VITE> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+Champ stocké <ACCE> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+Champ stocké <STRX_ELGA> à l'instant  0.000000000000e+00 pour le numéro d'ordre 0
+---------------------------------------------------------------------
+Instant de calcul:  1.000000000000e-02
+
+---------------------------------------------------------------------
+|     NEWTON     |     RESIDU     |     RESIDU     |     OPTION     |
+|    ITERATION   |     RELATIF    |     ABSOLU     |   ASSEMBLAGE   |
+|                | RESI_GLOB_RELA | RESI_GLOB_MAXI |(+ TYPE MATRICE)|
+---------------------------------------------------------------------
+|     0        X | 3.35434E-02  X | 1.19428E+02    |TANGENTE   (SYM)|
+|     1        X | 3.51255E-02  X | 1.31563E+02    |TANGENTE   (SYM)|
+|     2        X | 6.23635E-03  X | 2.33575E+01    |TANGENTE   (SYM)|
+|     3        X | 4.80087E-03  X | 1.79810E+01    |TANGENTE   (SYM)|
+|     4        X | 3.13774E-03  X | 1.17520E+01    |TANGENTE   (SYM)|
+|     5        X | 4.26383E-03  X | 1.59696E+01    |TANGENTE   (SYM)|
+|     6        X | 2.69982E-03  X | 1.01118E+01    |TANGENTE   (SYM)|
+|     7          | 3.89922E-05    | 1.46040E-01    |TANGENTE   (SYM)|
+---------------------------------------------------------------------
+Observations: 3135 réalisations pour ce pas de temps
+
+Critère(s) de convergence atteint(s)
+
+Le résidu de type <RESI_GLOB_RELA> vaut  3.899221474105e-05 au noeud et degré de liberté <797    
+DZ>
+Temps CPU consommé dans ce pas de temps    : 1.000 s
+
+* Nombre d'itérations de Newton                     : 8
+* Temps total intégration comportement              : 0.000 s (10 intégrations)
+* Temps total factorisation matrice                 : 0.000 s (8 factorisations)
+* Temps construction second membre                  : 0.000 s
+* Temps total résolution K.U=F                      : 0.000 s (8 résolutions)
+* Temps assemblage matrice                          : 0.000 s
+* Temps autres opérations                           : 1.000 s
+Mémoire (Mo) :   298.81 /   298.81 /   213.00 /   201.49 (VmPeak / VmSize / Optimum / Minimum)
+
+Archivage des champs
+
+Champ stocké <DEPL> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+Champ stocké <SIEF_ELGA> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+Champ stocké <VARI_ELGA> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+Champ stocké <COMPORTEMENT> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+Champ stocké <VITE> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+Champ stocké <ACCE> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+Champ stocké <STRX_ELGA> à l'instant  1.000000000000e-02 pour le numéro d'ordre 1
+[100%] Instant calculé : 1.00000e-02, dernier instant archivé : 1.00000e-02, au numéro d'ordre :    
+1
+Temps CPU consommé dans le calcul          : 1.000 s
+
+dont temps CPU "perdu" dans les découpes            : 0.000 s
+* Nombre de pas de temps                            : 1
+* Nombre d'itérations de Newton                     : 8
+* Temps dans l'archivage                            : 0.000 s
+* Temps dans le post-traitement                     : 0.000 s
+* Temps total intégration comportement              : 0.000 s (10 intégrations)
+* Temps total factorisation matrice                 : 0.000 s (8 factorisations)
+* Temps construction second membre                  : 0.000 s
+* Temps total résolution K.U=F                      : 0.000 s (8 résolutions)
+* Temps assemblage matrice                          : 0.000 s
+#1      Resolution des systemes lineaires                 CPU (USER+SYST/SYST/ELAPS):      0.16      0.00      0.00
+#2      Calculs elementaires et assemblages               CPU (USER+SYST/SYST/ELAPS):      0.04      0.00      1.00
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <EXCEPTION> <FICHIER_2>                                                                        ║
+ ║                                                                                                ║
+ ║ L'exécution du fichier 'fort.93' a échoué.                                                     ║
+ ║                                                                                                ║
+ ║ Détails :                                                                                      ║
+ ║                                                                                                ║
+ ║     Traceback (most recent call last):                                                         ║
+ ║                                                                                                ║
+ ║  File                                                                                          ║
+ ║ "C:\Users\user\AppData\Local\code_aster\v2024\17.2\lib\aster\code_aster\CodeCommands\include   ║
+ ║ py", line 58, in exec_                                                                         ║
+ ║     exec(compile(fobj.read(), filename, "exec"), context)                                      ║
+ ║   File                                                                                         ║
+ ║ "fort.93", line 240, in <module>                                                               ║
+ ║     + bridle_morison.distribute_force(nodenumber)                                              ║
+ ║   File                                                                                         ║
+ ║ "C:\Users\user\Desktop\v2024\Fish_cage\asterinput\module\morison.py", line 244, in             ║
+ ║ distribute_force                                                                               ║
+ ║     node_forces[i] += share                                                                    ║
+ ║ TypeError: ufunc 'add' output (typecode 'O')                                                   ║
+ ║ could not be coerced to provided output parameter (typecode 'd') according to the casting rule ║
+ ║ ''same_kind''                                                                                  ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+[TIME] DYNA_NON_LINE         : 0.361241 sec
+[TIME] tblp    : 0.020420 sec
+[TIME] tblp2    : 0.011589 sec
+[TIME] aster_module         : 0.000000 sec
+[TIME] wake update           : 0.154263 sec
+[TIME] force_on_element      : 0.694212 sec
+# Mémoire (Mo) :   299.12 /   294.01 /   213.28 /   201.49 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0027   user+syst:        1.17s (syst:        0.09s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+Exception: Trying to close the database after an uncaught exception...
+
+
+Publishing the result of the current command INCLUDE...
+
+No database in results, objects not saved on processor #0
+
+ ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+ ║ <I> <CATAMESS_89>                                                                              ║
+ ║                                                                                                ║
+ ║ Liste des alarmes émises lors de l'exécution du calcul.                                        ║
+ ║                                                                                                ║
+ ║     Les alarmes que vous avez                                                                  ║
+ ║ choisies d'ignorer sont précédées de (*).                                                      ║
+ ║     Nombre d'occurrences pour chacune des alarmes :                                            ║
+ ║                                                                                                ║
+ ║           MECANONLINE5_21      émise    1 fois                                                 ║
+ ║            MODELISA4_8          émise    1                                                     ║
+ ║ fois                                                                                           ║
+ ║            MODELISA8_13         émise  432 fois                                                ║
+ ║        (*) SUPERVIS_25          émise                                                          ║
+ ║ 3 fois                                                                                         ║
+ ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+<I> <FIN> ARRET NORMAL DANS "FIN" PAR APPEL A "JEFINI".
+  
+ <I> <FIN> MEMOIRE JEVEUX MINIMALE REQUISE POUR L'EXECUTION :                     201.49 Mo
+ <I> <FIN> MEMOIRE JEVEUX OPTIMALE REQUISE POUR L'EXECUTION :                     213.28 Mo
+ <I> <FIN> MAXIMUM DE MEMOIRE UTILISEE PAR LE PROCESSUS LORS DE L'EXECUTION :     299.12 Mo
+  
+ <I>       FERMETURE DES BASES EFFECTUEE
+  
+   STATISTIQUES CONCERNANT L'ALLOCATION DYNAMIQUE :
+     TAILLE CUMULEE MAXIMUM            :                  213  Mo.
+     TAILLE CUMULEE LIBEREE            :                   81  Mo.
+     NOMBRE TOTAL D'ALLOCATIONS        :               265513
+     NOMBRE TOTAL DE LIBERATIONS       :               263503
+     APPELS AU MECANISME DE LIBERATION :                    0
+     TAILLE MEMOIRE CUMULEE RECUPEREE  :                    0  Mo.
+     VOLUME DES LECTURES               :                    0  Mo.
+     VOLUME DES ECRITURES              :                    2  Mo.
+  
+   MEMOIRE JEVEUX MINIMALE REQUISE POUR L'EXECUTION :     201.49 Mo
+     - IMPOSE DE NOMBREUX ACCES DISQUE
+     - RALENTIT LA VITESSE D'EXECUTION
+   MEMOIRE JEVEUX OPTIMALE REQUISE POUR L'EXECUTION :     213.28 Mo
+     - LIMITE LES ACCES DISQUE
+     - AMELIORE LA VITESSE D'EXECUTION
+   MAXIMUM DE MEMOIRE UTILISEE PAR LE PROCESSUS     :     299.12 Mo
+     - COMPREND LA MEMOIRE CONSOMMEE PAR  JEVEUX, 
+       LE SUPERVISEUR PYTHON, LES LIBRAIRIES EXTERNES
+  
+ <I>       FIN D'EXECUTION LE : MA-24-FEVR-2026 17:35:13
+
+EXECUTION_CODE_ASTER_EXIT_23048=0
+
+
+
+------------------------------------------------------------
+--- DIAGNOSTIC JOB : <A>_ALARM
+------------------------------------------------------------
+

@@ -212,6 +212,24 @@ def export_all_to_vtu(outpath="Fish_Cage/saves/fish_cage.vtu"):
     for x, y, z in points:
         vtk_pts.InsertNextPoint(float(x), float(y), float(z))
 
+    # --- edges 중복 제거 (같은 (a,b) 또는 (b,a) 2번 들어오는 문제 방지) ---
+    seen = set()
+    dedup_edges = []
+    dedup_groups = []
+    for (a, b), gname in zip(edges, edge_group_name):
+        a = int(a); b = int(b)
+        if a == b:
+            continue
+        key = (a, b) if a < b else (b, a)
+        if key in seen:
+            continue
+        seen.add(key)
+        dedup_edges.append((a, b))
+        dedup_groups.append(gname)
+
+    edges = dedup_edges
+    edge_group_name = dedup_groups
+
     cells = vtk.vtkCellArray()
     for (a, b) in edges:
         line = vtk.vtkLine()

@@ -1,4 +1,5 @@
 import os, json, glob
+import pprint
 import salome
 salome.salome_init()
 
@@ -224,8 +225,12 @@ def export_all_to_med(outpath="fish_cage.unv"):
         "buoy1 node": set(),
         "buoy2 node": set(),
         "mooring line node": set(),
+        "bridle line node": set(),
         # anchor node는 최종에 폴리라인별로 1개씩 계산
     }
+
+    buoy1_by_base = {}  # base_gidx -> set(buoy_gidx candidates)
+    buoy2_by_base = {}  # (필요하면) base_gidx -> set(buoy2_top candidates)
 
     # 앵커 라인 폴리라인 후보 저장용 (A/B를 분리해 페어링)
     _anchor_lines_A = []  # list[ (ns_shifted, pts_len, baseN_before) ]
@@ -250,18 +255,35 @@ def export_all_to_med(outpath="fish_cage.unv"):
             edges_local = []
             edge_group_local = {}
 
+            seen_edge_local = set()
+
             for pl in polylines:
                 ns_raw = [int(x) for x in (pl.get("nodes", []) or [])]
                 if len(ns_raw) < 2:
                     continue
 
-                ns = [_S(x) for x in ns_raw]   # 모든 노드에 시프트 적용
+                ns = [_S(x) for x in ns_raw]
 
-                # 엣지 생성(연속)
+                # 엣지 생성(연속) + 중복 제거
                 start_e = len(edges_local)
-                for i in range(len(ns) - 1):
-                    edges_local.append([ns[i], ns[i + 1]])
+                added_idx = []  # ✅ 이 폴리라인에서 실제로 추가된 edge 인덱스만 기록
 
+                for i in range(len(ns) - 1):
+                    a, b = int(ns[i]), int(ns[i + 1])
+                    if a == b:
+                        continue
+                    key = (a, b) if a < b else (b, a)
+                    if key in seen_edge_local:
+                        continue
+                    seen_edge_local.add(key)
+                    edges_local.append([a, b])
+                    added_idx.append(len(edges_local) - 1)
+
+                # 그룹명 매핑: "추가된 것만" 그룹에 넣기
+                label = key2edge.get(pl.get("group", ""), None)
+                if label and added_idx:
+                    edge_group_local.setdefault(label, []).extend(added_idx)
+                    
                 # 그룹명 매핑
                 label = key2edge.get(pl.get("group", ""), None)
                 if label:
@@ -271,11 +293,21 @@ def export_all_to_med(outpath="fish_cage.unv"):
                 # ---- 링크 노드 그룹 수집(필요한 것만) ----
                 g = pl.get("group", "")
                 if g == "BUOY_TETHER":
-                    link_nodes["buoy1 node"].add(ns[-1])
+                    n0, n1 = ns[0], ns[-1]
+                    if n0 < curr_before and n1 >= curr_before:
+                        base, buoy = n0, n1
+                    elif n1 < curr_before and n0 >= curr_before:
+                        base, buoy = n1, n0
+                    else:
+                        base, buoy = None, None
+                    if base is not None:
+                        buoy1_by_base.setdefault(base, set()).add(buoy)
                 elif g == "BUOY_LINE":
                     link_nodes["buoy2 node"].add(ns[-1])
                 elif g == "DISTANCE_ROPE":
                     link_nodes["mooring line node"].update(ns)
+                elif g == "BRIDLE_LINE":
+                    link_nodes["bridle line node"].update(ns)
 
                 # ★ 앵커 라인: A/B를 분리해서 폴리라인 단위로 저장
                 if g == "ANCHOR_LINE_A":
@@ -326,6 +358,33 @@ def export_all_to_med(outpath="fish_cage.unv"):
     else:
         if "anchor node" in node_groups:
             del node_groups["anchor node"]
+    
+    # ---- buoy1/buoy2 node는 "맨 위(z 최대)" 1개만 남기기 ----
+    def _max_z_node(indices):
+        best, best_z = None, None
+        for i in indices:
+            i = int(i)
+            if 0 <= i < len(node_coords):
+                z = node_coords[i][2]
+                if best_z is None or z > best_z:
+                    best_z, best = z, i
+        return best
+
+    buoy1_selected = set()
+    for base, cand in buoy1_by_base.items():
+        top = _max_z_node(cand)
+        if top is not None:
+            buoy1_selected.add(top)
+    link_nodes["buoy1 node"] = buoy1_selected
+
+    # BUOY2도 "base마다 1개"로 하려면 같은 패턴(선택사항)
+    buoy2_selected = set()
+    for base, cand in buoy2_by_base.items():
+        top = _max_z_node(cand)
+        if top is not None:
+            buoy2_selected.add(top)
+    if buoy2_selected:
+        link_nodes["buoy2 node"] = buoy2_selected
 
     # ---- 링크 기반 나머지 노드 그룹 반영 ----
     for label, S in link_nodes.items():
@@ -424,8 +483,9 @@ def export_all_to_med(outpath="fish_cage.unv"):
         "all node": "ALLNODE",
         "buoy1 node": "BUOY1",
         "buoy2 node": "BUOY2",
-        "mooring line node": "MOORNODE",
+        "mooring frame node": "MOORN",
         "anchor node": "ANCHORN",
+        "bridle line node": "BRIDLEN",
 
         # EDGE groups
         "net twine": "NETTWIN",
@@ -506,7 +566,10 @@ def export_all_to_med(outpath="fish_cage.unv"):
         net_json_path = os.path.join(CAGE_DIR, "net_points.json")
         net_raw = jload(net_json_path, {})
         z_float = float(net_raw.get("z_float", 0.0))
+        numerical_half_mesh_size = net_raw.get("numerical_half_mesh_size", None)
         surfs_from_net = net_raw.get("surfs_netting", []) or []
+        flags = jload(os.path.join(CAGE_DIR, "flags.json"), {})
+        S_a = bool(flags.get("S_a", False))
 
         # 1) MED 노드 번호(ID) ↔ 좌표
         coords_by_med = {}
@@ -531,6 +594,17 @@ def export_all_to_med(outpath="fish_cage.unv"):
         lines_braket_all  = _edge_list_for_group("bracket")  # meshinfo 키는 Line_braket로 저장
         lines_bottom_ring = _edge_list_for_group("bottom ring")
 
+        lines_side_rope  = _edge_list_for_group("side ropes")
+        lines_bridle     = _edge_list_for_group("bridle line")
+
+        lines_buoy_1     = _edge_list_for_group("buoyline1")
+        lines_buoy_2     = _edge_list_for_group("buoyline2")
+        lines_buoy       = (lines_buoy_1 or []) + (lines_buoy_2 or [])
+
+        lines_anchor_A   = _edge_list_for_group("anchor line 1")
+        lines_anchor_B   = _edge_list_for_group("anchor line 2")
+        lines_mooring_frame = _edge_list_for_group("mooring frame")
+
         # 3) Lines_pipe_top: floater 중 z≈z_float인 것만
         def _approx(a, b, tol=1e-6): return abs(a - b) <= tol
         lines_pipe_top = []
@@ -539,13 +613,35 @@ def export_all_to_med(outpath="fish_cage.unv"):
             if _approx(za, z_float) and _approx(zb, z_float):
                 lines_pipe_top.append([a_med, b_med])
 
-        # 4) surfs_netting(0-베이스 글로벌 인덱스) → MED 노드 번호로 매핑
+        # 4) surfs_netting (0-베이스 글로벌 인덱스) → MED 노드 번호로 매핑
         surfs_med = []
-        for face in surfs_from_net:  # face: [i,j,k,(l)]
+        for face in surfs_from_net:  # face: [i, j, k, (l), tag]
+            tag = None
+            if face and isinstance(face[-1], str):
+                tag = face[-1]         # 마지막 요소가 태그('s' 또는 'b')이면 분리
+                face_nodes = face[:-1]  # 태그를 제외한 노드 목록
+            else:
+                face_nodes = face
             try:
-                surfs_med.append([int(node_ids[int(i)]) for i in face])
+                # 노드 인덱스를 MED 노드 ID로 변환
+                med_face = [int(node_ids[int(idx)]) for idx in face_nodes]
             except Exception:
-                pass  # 범위 밖 인덱스는 스킵
+                continue  # 범위를 벗어나면 해당 face는 건너뜀
+            if tag:
+                med_face.append(tag)   # 변환 후 태그를 다시 추가
+            surfs_med.append(med_face)
+
+        def _node_list_for_group(gname: str):
+            gis = sorted(list(node_groups.get(gname, set()) or []))
+            out = []
+            for gi in gis:
+                gi = int(gi)
+                if 0 <= gi < len(node_ids):
+                    out.append(int(node_ids[gi]))  # MED node id (1-based)
+            return out
+
+        buoy1_nodes = _node_list_for_group("buoy1 node")
+        buoy2_nodes = _node_list_for_group("buoy2 node")
 
         # 5) Nodes: MED 노드 번호 정렬 후 좌표 배열
         med_ids_sorted = sorted(coords_by_med.keys())
@@ -567,14 +663,41 @@ def export_all_to_med(outpath="fish_cage.unv"):
             "Lines_bottom_ring": lines_bottom_ring,
             "numberOfLines_bottom_ring": len(lines_bottom_ring),
 
+            "Lines_side_rope": lines_side_rope,
+            "numberOfLines_side_rope": len(lines_side_rope),
+
+            "Lines_bridle": lines_bridle,
+            "numberOfLines_bridle": len(lines_bridle),
+
+            "Lines_buoy": lines_buoy,
+            "numberOfLines_buoy": len(lines_buoy),
+
+            "Lines_anchor_A": lines_anchor_A,
+            "numberOfLines_anchor_A": len(lines_anchor_A),
+
+            "Lines_anchor_B": lines_anchor_B,
+            "numberOfLines_anchor_B": len(lines_anchor_B),
+
+            "Lines_mooring_frame": lines_mooring_frame,
+            "numberOfLines_mooring_frame": len(lines_mooring_frame),
+
             "surfs_netting": surfs_med,
             "numberOfsurfs_netting": len(surfs_med),
+
+            "Buoy1": buoy1_nodes,
+            "numberOfBuoy1": len(buoy1_nodes),
 
             "Nodes": nodes_xyz_by_med,
             "numberofNodes" : len(nodes_xyz_by_med),
             "MED_node_ids": med_ids_sorted,
-            "wake_origin": wake_origin
+            "wake_origin": wake_origin,
+            "Numerical_half_mesh_size": numerical_half_mesh_size,
+            "S_a": bool(S_a)
         }
+
+        if buoy2_nodes:
+            meshinfo["Buoy2"] = buoy2_nodes
+            meshinfo["numberOfBuoy2"] = len(buoy2_nodes)
 
         # v2024/Fish_Cage/asterinput/meshinfo.py 에 저장
         ROOT_DIR  = os.path.abspath(os.path.dirname(__file__))   # .../v2024/Fish_Cage
@@ -585,8 +708,10 @@ def export_all_to_med(outpath="fish_cage.unv"):
 
         # Python dict 형태로 저장
         with open(out_meshinfo, "w", encoding="utf-8") as f:
+            f.write("# coding: utf-8\n")
             f.write("meshinfo = ")
-            json.dump(meshinfo, f, indent=2, ensure_ascii=False)
+            f.write(pprint.pformat(meshinfo, width=120, compact=True))
+            f.write("\n")
 
         print(f"☑ meshinfo.py saved: {out_meshinfo}")
     except Exception as e:

@@ -1,0 +1,274 @@
+{
+  "group": "SIDE_ROPE_SUB",
+  "label": "Side rope(sub)",
+  "baseN": 833,
+  "extra_points": [],
+  "edges": [
+    [
+      432,
+      793
+    ],
+    [
+      434,
+      794
+    ],
+    [
+      436,
+      795
+    ],
+    [
+      438,
+      796
+    ],
+    [
+      440,
+      797
+    ],
+    [
+      442,
+      798
+    ],
+    [
+      444,
+      799
+    ],
+    [
+      446,
+      800
+    ],
+    [
+      448,
+      801
+    ],
+    [
+      450,
+      802
+    ],
+    [
+      452,
+      803
+    ],
+    [
+      454,
+      804
+    ],
+    [
+      456,
+      805
+    ],
+    [
+      458,
+      806
+    ],
+    [
+      460,
+      807
+    ],
+    [
+      462,
+      808
+    ],
+    [
+      464,
+      809
+    ],
+    [
+      466,
+      810
+    ],
+    [
+      468,
+      811
+    ],
+    [
+      470,
+      812
+    ],
+    [
+      472,
+      813
+    ],
+    [
+      474,
+      814
+    ],
+    [
+      476,
+      815
+    ],
+    [
+      478,
+      816
+    ]
+  ],
+  "polylines": [
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        432,
+        793
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        434,
+        794
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        436,
+        795
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        438,
+        796
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        440,
+        797
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        442,
+        798
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        444,
+        799
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        446,
+        800
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        448,
+        801
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        450,
+        802
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        452,
+        803
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        454,
+        804
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        456,
+        805
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        458,
+        806
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        460,
+        807
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        462,
+        808
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        464,
+        809
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        466,
+        810
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        468,
+        811
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        470,
+        812
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        472,
+        813
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        474,
+        814
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        476,
+        815
+      ]
+    },
+    {
+      "group": "SIDE_ROPE_SUB",
+      "nodes": [
+        478,
+        816
+      ]
+    }
+  ]
+}

@@ -1,104 +1,104 @@
 {
   "group": "FLOATER_BRACKET",
   "label": "Floater(braket)",
-  "baseN": 3097,
+  "baseN": 853,
   "extra_points": [],
   "edges": [
     [
       0,
-      3073
+      769
+    ],
+    [
+      2,
+      770
     ],
     [
       4,
-      3074
+      771
+    ],
+    [
+      6,
+      772
     ],
     [
       8,
-      3075
+      773
+    ],
+    [
+      10,
+      774
     ],
     [
       12,
-      3076
+      775
+    ],
+    [
+      14,
+      776
     ],
     [
       16,
-      3077
+      777
+    ],
+    [
+      18,
+      778
     ],
     [
       20,
-      3078
+      779
+    ],
+    [
+      22,
+      780
     ],
     [
       24,
-      3079
+      781
+    ],
+    [
+      26,
+      782
     ],
     [
       28,
-      3080
+      783
+    ],
+    [
+      30,
+      784
     ],
     [
       32,
-      3081
+      785
+    ],
+    [
+      34,
+      786
     ],
     [
       36,
-      3082
+      787
+    ],
+    [
+      38,
+      788
     ],
     [
       40,
-      3083
+      789
+    ],
+    [
+      42,
+      790
     ],
     [
       44,
-      3084
+      791
     ],
     [
-      48,
-      3085
-    ],
-    [
-      52,
-      3086
-    ],
-    [
-      56,
-      3087
-    ],
-    [
-      60,
-      3088
-    ],
-    [
-      64,
-      3089
-    ],
-    [
-      68,
-      3090
-    ],
-    [
-      72,
-      3091
-    ],
-    [
-      80,
-      3093
-    ],
-    [
-      84,
-      3094
-    ],
-    [
-      88,
-      3095
-    ],
-    [
-      92,
-      3096
-    ],
-    [
-      76,
-      3092
+      46,
+      792
     ]
   ],
   "polylines": [
@@ -106,168 +106,168 @@
       "group": "FLOATER_BRACKET",
       "nodes": [
         0,
-        3073
+        769
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        2,
+        770
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         4,
-        3074
+        771
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        6,
+        772
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         8,
-        3075
+        773
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        10,
+        774
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         12,
-        3076
+        775
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        14,
+        776
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         16,
-        3077
+        777
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        18,
+        778
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         20,
-        3078
+        779
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        22,
+        780
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         24,
-        3079
+        781
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        26,
+        782
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         28,
-        3080
+        783
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        30,
+        784
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         32,
-        3081
+        785
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        34,
+        786
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         36,
-        3082
+        787
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        38,
+        788
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         40,
-        3083
+        789
+      ]
+    },
+    {
+      "group": "FLOATER_BRACKET",
+      "nodes": [
+        42,
+        790
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
         44,
-        3084
+        791
       ]
     },
     {
       "group": "FLOATER_BRACKET",
       "nodes": [
-        48,
-        3085
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        52,
-        3086
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        56,
-        3087
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        60,
-        3088
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        64,
-        3089
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        68,
-        3090
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        72,
-        3091
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        80,
-        3093
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        84,
-        3094
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        88,
-        3095
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        92,
-        3096
-      ]
-    },
-    {
-      "group": "FLOATER_BRACKET",
-      "nodes": [
-        76,
-        3092
+        46,
+        792
       ]
     }
   ]
