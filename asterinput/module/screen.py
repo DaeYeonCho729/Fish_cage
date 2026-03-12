@@ -176,6 +176,7 @@ class ScreenModel:
             # 방어 x → 그냥 None 반환 (네가 원하는 대로)
             return 0.0, 0.0, 0.0, np.zeros(3), np.zeros(3)
 
+        Urel = float(np.linalg.norm(fluid_velocity))
         unit_normal_vector = normal / (norm_n)
         if np.dot(unit_normal_vector, fluid_velocity) < 0:
             unit_normal_vector = -unit_normal_vector
@@ -191,13 +192,60 @@ class ScreenModel:
 
         drag_coefficient, lift_coefficient = 0, 0 # 초기화 
 
-        drag_coefficient = 0.04 + (
-                -0.04 + 0.33 * self.sn + 6.54 * pow(self.sn, 2) - 4.88 * pow(self.sn, 3)) * np.cos(
-            inflow_angle)
-        lift_coefficient = (-0.05 * self.sn + 2.3 * pow(self.sn, 2) - 1.76 * pow(self.sn, 3)) * np.sin(
-            2 * inflow_angle)
-        
-        return surface_area, drag_coefficient, lift_coefficient, drag_vector, lift_vector
+        # -----------------------------
+        # 3) 해수 20도 동점성계수
+        # -----------------------------
+        nu = 1.05e-6   # [m^2/s]
+
+        # Eq. (11)
+        Re = (self.dw * Urel) / (nu * (1.0 - self.sn) + eps)
+
+        x = np.log10(Re)
+
+        # Eq. (10): C_D^(circ:cyl)
+        cd_circ_cyl = (
+            -78.46675
+            + 254.73873 * x
+            - 327.88640 * (x ** 2)
+            + 223.64577 * (x ** 3)
+            - 87.92234 * (x ** 4)
+            + 20.00769 * (x ** 5)
+            - 2.44894 * (x ** 6)
+            + 0.12479 * (x ** 7)
+        )
+
+        # -----------------------------
+        # 4) cd 계산: Section 2.5.1
+        #    cd = CN(0), Eq. (9) with y=0
+        # -----------------------------
+        cd = (
+            cd_circ_cyl * self.sn * (2.0 - self.sn)
+            / (((1.0 - self.sn) ** 2) *2)
+        )
+
+        # -----------------------------
+        # 5) cl 계산: Section 2.5.1
+        #    CN(pi/4)=0.5*cd
+        #    CT(pi/4) from Eq. (7)
+        #    cl from Eq. (2)
+        # -----------------------------
+        cn_45 = 0.5 * cd
+        y_45 = 0.25 * np.pi
+
+        ct_45 = y_45 * ((4.0 * cn_45) / (8.0 + cn_45))
+
+        cl = (cn_45 - ct_45) / (2**0.5)
+
+        drag_coefficient = cd * np.cos(inflow_angle)
+        lift_coefficient = cl * np.sin(inflow_angle * 2)
+
+        return (
+            float(surface_area),
+            float(drag_coefficient),
+            float(lift_coefficient),
+            drag_vector,
+            lift_vector,
+        )
 
     def force_on_element(self, node_position, velocity_fluid, velocity_structure=None, elevation=None):
         if velocity_structure is None:
