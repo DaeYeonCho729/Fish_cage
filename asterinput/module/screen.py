@@ -252,71 +252,125 @@ class ScreenModel:
             velocity_structure = np.zeros_like(node_position)
 
         num_element = len(self.triangular_elements)
-        force_on_element = np.zeros((num_element, 3))
+        force_on_element = np.zeros((num_element, 3), dtype=float)
         eps = np.finfo(np.float64).eps
+        tiny = 1e-12
 
         # 사각형별 중앙점 속도 저장
         quad_center_vel = {}
+
+        def _elev_z(elev, idx):
+            if elev is None:
+                return 0.0
+            v = elev[int(idx)]
+            v = np.asarray(v)
+            if v.ndim == 0:
+                return float(v)
+            return float(v[2] if v.size >= 3 else v.item())
+
+        def _submerge_ratio(zvals):
+            """
+            zvals = elev_z - node_z
+            >0: 수중, <0: 수상
+            """
+            zvals = np.asarray(zvals, dtype=float)
+            r = ((zvals > 0).astype(float) + 0.5 * (np.abs(zvals) <= eps).astype(float)).mean()
+            return max(0.0, min(1.0, float(r)))
 
         for idx, tri in enumerate(self.triangular_elements):
             # 1) 좌표
             p1, p2, p3 = self._resolve_triangle_points(tri, node_position, idx)
 
-            # 2) 상대속도
-            u_f = velocity_fluid[idx]
+            # 2) 요소 유체속도
+            u_f = np.asarray(velocity_fluid[idx], dtype=float)
 
+            # wake reduction
             if self.wake_initialized:
-                r = float(self.wake_reduction_factors[idx])   # (n,1) → 스칼라
+                r = float(self.wake_reduction_factors[idx])
                 u_f = r * u_f
 
-            if tri[2] != -1:
-                # 원래 삼각형: 세 노드 평균
-                v_s = (velocity_structure[tri[0]] +
-                    velocity_structure[tri[1]] +
-                    velocity_structure[tri[2]]) / 3.0
+            # 3) 잠김 비율 계산
+            i, j, k = tri
+            if elevation is None:
+                ratio_water = 1.0
             else:
-                # 사각형 sub-tri: 중앙점 속도 = 4코너 평균 (캐시 활용)
-                key = tuple(self._quad_of_sub[idx])   # (a,b,c,d)
+                if k != -1:
+                    e0 = _elev_z(elevation, i)
+                    e1 = _elev_z(elevation, j)
+                    e2 = _elev_z(elevation, k)
+                else:
+                    a, b, c, d = self._quad_of_sub[idx]
+                    e_center = (
+                        _elev_z(elevation, a) +
+                        _elev_z(elevation, b) +
+                        _elev_z(elevation, c) +
+                        _elev_z(elevation, d)
+                    ) / 4.0
+                    e0 = _elev_z(elevation, i)
+                    e1 = _elev_z(elevation, j)
+                    e2 = e_center
+
+                z_rel = [e0 - p1[2], e1 - p2[2], e2 - p3[2]]
+                ratio_water = _submerge_ratio(z_rel)
+
+            # 수면 위면 0, 부분잠김이면 감소
+            u_f = ratio_water * u_f
+
+            # 4) 구조 속도
+            if tri[2] != -1:
+                v_s = (
+                    velocity_structure[tri[0]] +
+                    velocity_structure[tri[1]] +
+                    velocity_structure[tri[2]]
+                ) / 3.0
+            else:
+                key = tuple(self._quad_of_sub[idx])
                 v_center = quad_center_vel.get(key)
                 if v_center is None:
                     a, b, c, d = key
-                    v_center = (velocity_structure[a] +
-                                velocity_structure[b] +
-                                velocity_structure[c] +
-                                velocity_structure[d]) / 4.0
+                    v_center = (
+                        velocity_structure[a] +
+                        velocity_structure[b] +
+                        velocity_structure[c] +
+                        velocity_structure[d]
+                    ) / 4.0
                     quad_center_vel[key] = v_center
-                # 삼각형 꼭짓점(i, j, center)의 속도 평균
-                v_s = (velocity_structure[tri[0]] +
-                    velocity_structure[tri[1]] +
-                    v_center) / 3.0
 
-            while np.linalg.norm(v_s) > np.linalg.norm(u_f):
+                v_s = (
+                    velocity_structure[tri[0]] +
+                    velocity_structure[tri[1]] +
+                    v_center
+                ) / 3.0
+
+            while np.linalg.norm(v_s) > np.linalg.norm(u_f) and np.linalg.norm(u_f) > tiny:
                 v_s *= 0.1
+
             if np.dot(v_s, u_f) > 0:
                 rel = u_f - v_s
-            else :
-                rel = u_f - v_s * 0
+            else:
+                rel = u_f
 
-            area, Cd, Cl, drag_dir, lift_dir = self.hydro_coefficients(p1, p2, p3, rel, tri_nodes=tri)
+            U = float(np.linalg.norm(rel))
+            if U < tiny or ratio_water <= 0.0:
+                force_on_element[idx] = 0.0
+                continue
 
-            # 4) 밀도 선택
-            rho = row_water
+            # 5) 계수
+            area, Cd, Cl, drag_dir, lift_dir = self.hydro_coefficients(
+                p1, p2, p3, rel, tri_nodes=tri
+            )
 
-            # 5) 힘 크기
-            U = np.linalg.norm(rel)
-            FD_mag = 0.5 * rho * Cd * area * (U**2) * drag_dir
-            FL_mag = 0.5 * rho * Cl * area * (U**2)
+            # 6) 유체 밀도 보간
+            rho = row_air * (1.0 - ratio_water) + row_water * ratio_water
 
-            # 6) 요소 힘
-            FD = FD_mag
-            FL = FL_mag * lift_dir
-            force_on_element[idx] = (FD + FL)
-            
-            #print(f"[Elem {idx:02d}] Cd={Cd:.4f}, Cl={Cl:.4f}, |U|={U:.3f}, Area={area:.5f}")
+            # 7) 힘
+            FD = 0.5 * rho * Cd * area * (U ** 2) * drag_dir
+            FL = 0.5 * rho * Cl * area * (U ** 2) * lift_dir
 
-        # 7) 상태 업데이트
+            force_on_element[idx] = FD + FL
+
         self.hydro_dynamic_forces = force_on_element
-        self.hydro_total_forces   = force_on_element
+        self.hydro_total_forces = force_on_element
         return force_on_element
         
 

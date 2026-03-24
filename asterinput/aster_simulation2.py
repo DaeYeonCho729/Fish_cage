@@ -10,7 +10,6 @@ loadr.append(_F(CHARGE=fixed), )
 loadr.append(_F(CHARGE=sinkF1), )
 loadr.append(_F(CHARGE=sinkF2), )
 loadr.append(_F(CHARGE=sinkF3), )
-loadr.append(_F(CHARGE=sinkF4), )
 
 if not S_a:
     comp = (
@@ -141,9 +140,6 @@ posi = aster_module.get_position_aster(tblp)
 
 timeFE = dt * k
 
-Nnode = posi.shape[0]
-elev = np.zeros(Nnode)
-
 if k == 0:
     velo_nodes = np.zeros_like(posi)
 else:
@@ -153,46 +149,73 @@ print(f"[TIME] aster_module         : {t8 - t7:.6f} sec")
 
 
 t9 = time.time()
-u_all = np.ones((NO_cage, 3)) * current_input
+
+# -----------------------------
+# 1) wave velocity 계산 (노드 기준)
+# -----------------------------
+if wave_model is not None:
+    wave_vel_nodes = wave_model.velocity(posi, timeFE)
+    elev = wave_model.eta(posi, timeFE)
+else:
+    wave_vel_nodes = np.zeros_like(posi)
+    elev = np.zeros(posi.shape[0], dtype=float)
+
+# -----------------------------
+# 2) current + wave
+# -----------------------------
+current_nodes = np.ones_like(posi, dtype=float) * np.asarray(current_input, dtype=float)
+fluid_vel_nodes = current_nodes + wave_vel_nodes
+
+# -----------------------------
+# 3) net 전용: 요소 평균 유속
+# -----------------------------
+u_net = np.array([
+    fluid_vel_nodes[[a, b, c]].mean(axis=0) if c != -1
+    else fluid_vel_nodes[[a, b]].mean(axis=0)
+    for (a, b, c) in netting.triangular_elements
+], dtype=float)
 
 if k == 0:
-    netting.init_wake(posi, current_input) 
+    netting.init_wake(posi, current_input)
     netting.update_wake_reduction(posi, velo_nodes)
 else:
     netting.update_wake_reduction(posi, velo_nodes)
+
 t10 = time.time()
 print(f"[TIME] wake update           : {t10 - t9:.6f} sec")
 
 t11 = time.time()
 
-net_dyn  = netting.force_on_element(posi, u_all[s_net],  velo_nodes, elev)
+# ScreenModel: 요소 유속(u_net) 사용
+net_dyn  = netting.force_on_element(posi, u_net, velo_nodes, elev)
 net_buoy = netting.cal_buoy_force(posi, elev)
 
-flo_dyn  = floater_morison.force_on_element(posi, u_all[s_flo],  velo_nodes, elev)
-flo_buoy = floater_morison.cal_buoy_force(posi, elev)
+# MorisonModel: 노드 유속(fluid_vel_nodes) 그대로 전달
+flo_dyn   = floater_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
+flo_buoy  = floater_morison.cal_buoy_force(posi, elev)
 
-btr_dyn  = bottomring_morison.force_on_element(posi, u_all[s_btr],  velo_nodes, elev)
-btr_buoy = bottomring_morison.cal_buoy_force(posi, elev)
+btr_dyn   = bottomring_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
+btr_buoy  = bottomring_morison.cal_buoy_force(posi, elev)
 
-siro_dyn  = siderope_morison.force_on_element(posi, u_all[s_sir],  velo_nodes, elev)
+siro_dyn  = siderope_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
 siro_buoy = siderope_morison.cal_buoy_force(posi, elev)
 
-bri_dyn  = bridle_morison.force_on_element(posi, u_all[s_bri],  velo_nodes, elev)
-bri_buoy = bridle_morison.cal_buoy_force(posi, elev)
+bri_dyn   = bridle_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
+bri_buoy  = bridle_morison.cal_buoy_force(posi, elev)
 
-buoyl_dyn  = buoyline_morison.force_on_element(posi, u_all[s_buyl],  velo_nodes, elev)
+buoyl_dyn  = buoyline_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
 buoyl_buoy = buoyline_morison.cal_buoy_force(posi, elev)
 
-ancla_dyn  = anchora_morison.force_on_element(posi, u_all[s_aa],  velo_nodes, elev)
+ancla_dyn  = anchora_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
 ancla_buoy = anchora_morison.cal_buoy_force(posi, elev)
 
-anclb_dyn  = anchorb_morison.force_on_element(posi, u_all[s_ab],  velo_nodes, elev)
+anclb_dyn  = anchorb_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
 anclb_buoy = anchorb_morison.cal_buoy_force(posi, elev)
 
-moor_dyn  = mooring_morison.force_on_element(posi, u_all[s_moor],  velo_nodes, elev)
+moor_dyn  = mooring_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
 moor_buoy = mooring_morison.cal_buoy_force(posi, elev)
 
-bra_dyn  = braket_morison.force_on_element(posi, u_all[s_bra],  velo_nodes, elev)
+bra_dyn  = braket_morison.force_on_element(posi, fluid_vel_nodes, velo_nodes, elev)
 bra_buoy = braket_morison.cal_buoy_force(posi, elev)
 
 t12 = time.time()

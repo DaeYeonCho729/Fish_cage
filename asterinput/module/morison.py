@@ -114,67 +114,110 @@ class MorisonModel:
         if velocity_structure is None:
             velocity_structure = np.zeros_like(node_position)
 
-        
         num_element = len(self.line_elements)
         force_on_element = np.zeros((num_element, 3), dtype=float)
         eps = np.finfo(np.float64).eps
 
-        vfluid = np.asarray(velocity_fluid, float)
+        vfluid = np.asarray(velocity_fluid, dtype=float)
+        pos = np.asarray(node_position, dtype=float)
+        vel_s = np.asarray(velocity_structure, dtype=float)
 
-        # -------------------- [B옵션 추가: 1-based 자동 감지/변환] --------------------
-        N = int(np.asarray(node_position).shape[0])  # node_position의 노드 개수
-        one_based = False
-        if num_element > 0:
-            # self.line_elements에서 최대 인덱스를 보고 판단
-            try:
-                max_idx = max((n1 if n1 > n2 else n2) for (n1, n2) in self.line_elements)
-                if max_idx >= N:
-                    one_based = True
-            except Exception:
-                one_based = False
-        # ---------------------------------------------------------------------------
+        N = int(pos.shape[0])
+        tiny = 1e-12
+
+        def _elev_z(elev, idx):
+            if elev is None:
+                return 0.0
+            v = elev[int(idx)]
+            v = np.asarray(v)
+            if v.ndim == 0:
+                return float(v)
+            return float(v[2] if v.size >= 3 else v.item())
+
+        def _segment_submerge_ratio(p1, p2, e1, e2):
+            """
+            선요소 잠김 비율(0~1)
+            z_rel = elev - z
+            z_rel > 0 : 수면 아래
+            z_rel < 0 : 수면 위
+            """
+            z1 = float(e1 - p1[2])
+            z2 = float(e2 - p2[2])
+
+            # 완전 수중
+            if z1 >= 0.0 and z2 >= 0.0:
+                return 1.0
+            # 완전 수상
+            if z1 <= 0.0 and z2 <= 0.0:
+                return 0.0
+
+            # 부분 잠김: 선형 보간
+            denom = (z1 - z2)
+            if abs(denom) < tiny:
+                return 0.5
+
+            t = z1 / denom  # z_rel=0 되는 위치
+            t = max(0.0, min(1.0, t))
+
+            # p(t)=p1+t(p2-p1), t=0 -> p1, t=1 -> p2
+            # z1>0, z2<0 이면 p1 쪽이 물속
+            if z1 > 0.0 and z2 < 0.0:
+                return t
+            # z1<0, z2>0 이면 p2 쪽이 물속
+            elif z1 < 0.0 and z2 > 0.0:
+                return 1.0 - t
+            else:
+                return 0.0
 
         for idx, (n1, n2) in enumerate(self.line_elements):
-            # -------------------- [B옵션 추가: 변환 + 범위검사] --------------------
-            if one_based:
-                n1 -= 1
-                n2 -= 1
-
             if n1 < 0 or n2 < 0 or n1 >= N or n2 >= N:
                 force_on_element[idx] = 0.0
                 continue
-            # ----------------------------------------------------------------------
-            p1 = node_position[n1]
-            p2 = node_position[n2]
-            tiny = 1e-12
+
+            p1 = pos[n1]
+            p2 = pos[n2]
+
             # 유체 속도(요소 대표값)
-            if vfluid.shape[0] == node_position.shape[0]:
+            if vfluid.shape[0] == N:
                 u_f = 0.5 * (vfluid[n1] + vfluid[n2])
             else:
                 u_f = vfluid[idx]
 
-            # 구조 속도(요소 대표값)
-            v_s = 0.5 * (velocity_structure[n1] + velocity_structure[n2])
+            # 잠김 비율
+            if elevation is None:
+                ratio_water = 1.0
+            else:
+                e1 = _elev_z(elevation, n1)
+                e2 = _elev_z(elevation, n2)
+                ratio_water = _segment_submerge_ratio(p1, p2, e1, e2)
 
-            # Screen에서 했던 안전장치
-            while np.linalg.norm(v_s) > np.linalg.norm(u_f):
+            # 수면 위면 유체속도 0, 부분잠김이면 비율만큼 감소
+            u_f = ratio_water * u_f
+
+            # 구조 속도(요소 대표값)
+            v_s = 0.5 * (vel_s[n1] + vel_s[n2])
+
+            while np.linalg.norm(v_s) > np.linalg.norm(u_f) and np.linalg.norm(u_f) > tiny:
                 v_s *= 0.1
+
             if np.dot(v_s, u_f) > 0:
                 rel = u_f - v_s
-            else :
-                rel = u_f - v_s * 0
-
-
-            # 계수(각도기반 Cd/Cl) + 방향벡터
-            L, Cd, Cl, drag_dir, lift_dir = self.hydro_coefficients(p1, p2, rel, tri_nodes=(n1, n2))
-
-            # 밀도(유체)
-            rho = row_water
-
-            # 원통 projected area
-            A = float(self.dw) * float(L)
+            else:
+                rel = u_f
 
             U = float(np.linalg.norm(rel))
+            if U < tiny or ratio_water <= 0.0:
+                force_on_element[idx] = 0.0
+                continue
+
+            # 계수 + 방향벡터
+            L, Cd, Cl, drag_dir, lift_dir = self.hydro_coefficients(p1, p2, rel, tri_nodes=(n1, n2))
+
+            # 유체 밀도도 잠김 비율로 보간
+            rho = row_air * (1.0 - ratio_water) + row_water * ratio_water
+
+            # projected area
+            A = float(self.dw) * float(L)
 
             FD = 0.5 * rho * Cd * A * (U ** 2) * drag_dir
             FL = 0.5 * rho * Cl * A * (U ** 2) * lift_dir
@@ -188,9 +231,8 @@ class MorisonModel:
     def cal_buoy_force(self, node_position, elevation):
         """
         선요소(로프/플로터/바텀링) 부력(정수력) 계산
-        - element volume: V = (pi/4) * d^2 * L
         - elevation: shape (N,) 또는 (N,3) 지원
-        - 잠김판정: 두 끝 노드의 (elev_z - node_z) 부호로 ratio_water 결정(0~1)
+        - 잠김 비율 기반으로 공기/물 밀도 보간
         """
         pos = np.asarray(node_position, dtype=float)
         Nnode = pos.shape[0]
@@ -198,7 +240,37 @@ class MorisonModel:
         force_on_element = np.zeros((Ne, 3), dtype=float)
         tiny = 1e-12
 
-        dws = self.dw
+        dws = float(self.dw)
+
+        def _elev_z(elev, idx):
+            v = elev[int(idx)]
+            v = np.asarray(v)
+            if v.ndim == 0:
+                return float(v)
+            return float(v[2] if v.size >= 3 else v.item())
+
+        def _segment_submerge_ratio(p1, p2, e1, e2):
+            z1 = float(e1 - p1[2])
+            z2 = float(e2 - p2[2])
+
+            if z1 >= 0.0 and z2 >= 0.0:
+                return 1.0
+            if z1 <= 0.0 and z2 <= 0.0:
+                return 0.0
+
+            denom = (z1 - z2)
+            if abs(denom) < tiny:
+                return 0.5
+
+            t = z1 / denom
+            t = max(0.0, min(1.0, t))
+
+            if z1 > 0.0 and z2 < 0.0:
+                return t
+            elif z1 < 0.0 and z2 > 0.0:
+                return 1.0 - t
+            else:
+                return 0.0
 
         for eidx, (i, j) in enumerate(self.line_elements):
             if not (0 <= i < Nnode and 0 <= j < Nnode):
@@ -213,15 +285,18 @@ class MorisonModel:
 
             V_g = 0.25 * pi * (dws**2 - self.dr**2) * L
 
-            V_b = 0.25 * pi * (dws ** 2) * L
+            V_b = 0.25 * pi * (dws**2) * L
 
-            rho_fluid = row_water
+            e1 = _elev_z(elevation, i)
+            e2 = _elev_z(elevation, j)
+            ratio_water = _segment_submerge_ratio(p1, p2, e1, e2)
 
-            buoy = V_b * gravity * (rho_fluid)
-            weight = V_g * gravity * (self.rho)
-            
+            rho_fluid = row_air * (1.0 - ratio_water) + row_water * ratio_water
+
+            buoy = V_b * gravity * rho_fluid
+            weight = V_g * gravity * self.rho
+
             Fz = buoy - weight
-
             force_on_element[eidx] = np.array([0.0, 0.0, Fz], dtype=float)
 
         self.hydro_static_forces = force_on_element

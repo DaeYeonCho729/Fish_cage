@@ -8,6 +8,7 @@ sys.path.append(os.path.join(cwd, "module"))
 import morison as mori
 import screen as scr  
 import aster_module
+import wave_model as wavemod
 
 DEBUT(
     PAR_LOT='NON',
@@ -23,7 +24,24 @@ duration = materials["simulation"]["duration"]
 
 r = (meshinfo["Numerical_half_mesh_size"]/materials["Net"]["Mesh_length"])
 rr = r **0.5
+
 current_input = materials['simulation']['current']
+
+wave_cfg = materials["simulation"].get("wave", {})
+wave_enabled = bool(wave_cfg.get("enabled", False))
+wave_type = str(wave_cfg.get("type", "regular")).lower()
+
+wave_model = None
+if wave_enabled and wave_type == "regular":
+    wave_model = wavemod.LinearRegularWave(
+        H=wave_cfg.get("height", 0.0),
+        T=wave_cfg.get("period", 1.0),
+        h=wave_cfg.get("depth", 1.0),
+        wavelength=wave_cfg.get("wavelength", 10.0),
+        direction_deg=wave_cfg.get("direction_deg", 0.0),
+        phase_deg=wave_cfg.get("phase_deg", 0.0),
+        z0=wave_cfg.get("z0", 0.0),
+    )
 
 itimes=int(duration/dt)
 tend = itimes*dt
@@ -34,7 +52,7 @@ l = ["None"] * (nodenumber + 1)
 S_a = meshinfo["S_a"]
 
 netting = scr.ScreenModel(
-    rr,
+    r,
     meshinfo["surfs_netting"],     
     materials["Net"]["Sn"],        
     materials["Net"]["twine_dia"], 
@@ -534,22 +552,6 @@ load_list3 = [
 
 
 sinkF3 = AFFE_CHAR_MECA(
-    FORCE_NODALE=tuple(load_list3),
-    MODELE=model
-)
-
-
-load_list4 = [
-    _F(
-        GROUP_NO=('ANCHORN',),
-        FX=0,
-        FY=0,
-        FZ=-3000,
-    )
-]
-
-
-sinkF4 = AFFE_CHAR_MECA(
     FORCE_NODALE=tuple(load_list3),
     MODELE=model
 )

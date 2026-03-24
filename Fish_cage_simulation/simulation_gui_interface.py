@@ -60,6 +60,11 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(run_tab, "Setting")
         self.attach_edge_material_form(QVBoxLayout(run_tab))
 
+        #environment 탭 추가
+        env_tab = QWidget(self)
+        self.tab_widget.addTab(env_tab, "Environment")
+        self.attach_environment_form(QVBoxLayout(env_tab))
+
         # ---- (왼쪽) VTK 뷰어 생성
         self.vtk_widget = QVTKRenderWindowInteractor(self)
 
@@ -855,27 +860,27 @@ class MainWindow(QMainWindow):
 
         form.addRow(grp_box)
 
-        self.grp_env = QGroupBox("ENVIRONMENT")
-        self.grp_env.setCheckable(True)
-        self.grp_env.setChecked(False)
-        env_form = QFormLayout(self.grp_env)
+        # self.grp_env = QGroupBox("ENVIRONMENT")
+        # self.grp_env.setCheckable(True)
+        # self.grp_env.setChecked(False)
+        # env_form = QFormLayout(self.grp_env)
 
-        self.in_dt = QLineEdit();        self.in_dt.setPlaceholderText("(s)")
-        self.in_duration = QLineEdit();  self.in_duration.setPlaceholderText("(s)")
-        self.in_curr_x = QLineEdit();    self.in_curr_x.setPlaceholderText("(m/s)")
-        self.in_curr_y = QLineEdit();    self.in_curr_y.setPlaceholderText("(m/s)")
-        self.in_curr_z = QLineEdit();    self.in_curr_z.setPlaceholderText("(m/s)")
+        # self.in_dt = QLineEdit();        self.in_dt.setPlaceholderText("(s)")
+        # self.in_duration = QLineEdit();  self.in_duration.setPlaceholderText("(s)")
+        # self.in_curr_x = QLineEdit();    self.in_curr_x.setPlaceholderText("(m/s)")
+        # self.in_curr_y = QLineEdit();    self.in_curr_y.setPlaceholderText("(m/s)")
+        # self.in_curr_z = QLineEdit();    self.in_curr_z.setPlaceholderText("(m/s)")
 
-        _dv_env = QDoubleValidator(0.0, 1e12, 6)
-        for le in (self.in_dt, self.in_duration, self.in_curr_x, self.in_curr_y, self.in_curr_z):
-            le.setValidator(_dv_env); le.setAlignment(Qt.AlignRight)
+        # _dv_env = QDoubleValidator(0.0, 1e12, 6)
+        # for le in (self.in_dt, self.in_duration, self.in_curr_x, self.in_curr_y, self.in_curr_z):
+        #     le.setValidator(_dv_env); le.setAlignment(Qt.AlignRight)
 
-        env_form.addRow("time step", self.in_dt)
-        env_form.addRow("total time", self.in_duration)
-        env_form.addRow("current x", self.in_curr_x)
-        env_form.addRow("current y", self.in_curr_y)
-        env_form.addRow("current z", self.in_curr_z)
-        form.addRow(self.grp_env)
+        # env_form.addRow("time step", self.in_dt)
+        # env_form.addRow("total time", self.in_duration)
+        # env_form.addRow("current x", self.in_curr_x)
+        # env_form.addRow("current y", self.in_curr_y)
+        # env_form.addRow("current z", self.in_curr_z)
+        # form.addRow(self.grp_env)
 
 
         # 🔹 SpinBox → LineEdit + 콤마 표시
@@ -1077,6 +1082,18 @@ class MainWindow(QMainWindow):
                 "current": [curx or 0.0, cury or 0.0, curz or 0.0]
             }
 
+            if hasattr(self, "grp_wave"):
+                data["simulation"]["wave"] = {
+                    "enabled": bool(self.grp_wave.isChecked()),
+                    "type": "regular",
+                    "height": _getf(self.in_wave_height, 0.0) or 0.0,
+                    "period": _getf(self.in_wave_period, 1.0) or 1.0,
+                    "wavelength": _getf(self.in_wave_length, 10.0) or 10.0,
+                    "depth": _getf(self.in_wave_depth, 1.0) or 1.0,
+                    "direction_deg": _getf(self.in_wave_dir, 0.0) or 0.0,
+                    "phase_deg": _getf(self.in_wave_phase, 0.0) or 0.0,
+                    "z0": _getf(self.in_wave_z0, 0.0) or 0.0,
+                }
         
             st = self._form_state
 
@@ -1269,6 +1286,132 @@ class MainWindow(QMainWindow):
     def _set_floater_section_enabled(self, on: bool):
         if hasattr(self, "grp_floater"):
             self.grp_floater.setEnabled(bool(on))
+
+    def attach_environment_form(self, parent_layout):
+        w = QWidget(self)
+        root = QVBoxLayout(w)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(10)
+
+        _dv_env = QDoubleValidator(-1e12, 1e12, 6)
+
+        def _style_groupbox(gb):
+            gb.setCheckable(False)
+            gb.setStyleSheet("""
+            QGroupBox {
+                font-weight: 600;
+                border: 1px solid #bbb;
+                border-radius: 6px;
+                margin-top: 8px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 4px;
+            }
+            """)
+
+        # =========================
+        # TIME
+        # =========================
+        self.grp_time = QGroupBox("TIME")
+        _style_groupbox(self.grp_time)
+        time_form = QFormLayout(self.grp_time)
+
+        self.in_dt = QLineEdit()
+        self.in_dt.setPlaceholderText("(s)")
+        self.in_duration = QLineEdit()
+        self.in_duration.setPlaceholderText("(s)")
+
+        for le in (self.in_dt, self.in_duration):
+            le.setValidator(_dv_env)
+            le.setAlignment(Qt.AlignRight)
+
+        time_form.addRow("time step", self.in_dt)
+        time_form.addRow("total time", self.in_duration)
+
+        root.addWidget(self.grp_time)
+
+        # =========================
+        # CURRENT
+        # =========================
+        self.grp_current = QGroupBox("CURRENT")
+        _style_groupbox(self.grp_current)
+        cur_form = QFormLayout(self.grp_current)
+
+        self.in_curr_x = QLineEdit()
+        self.in_curr_x.setPlaceholderText("(m/s)")
+        self.in_curr_y = QLineEdit()
+        self.in_curr_y.setPlaceholderText("(m/s)")
+        self.in_curr_z = QLineEdit()
+        self.in_curr_z.setPlaceholderText("(m/s)")
+
+        for le in (self.in_curr_x, self.in_curr_y, self.in_curr_z):
+            le.setValidator(_dv_env)
+            le.setAlignment(Qt.AlignRight)
+
+        cur_form.addRow("current x", self.in_curr_x)
+        cur_form.addRow("current y", self.in_curr_y)
+        cur_form.addRow("current z", self.in_curr_z)
+
+        root.addWidget(self.grp_current)
+
+        # =========================
+        # WAVE
+        # =========================
+        self.grp_wave = QGroupBox("WAVE")
+        self.grp_wave.setCheckable(True)
+        self.grp_wave.setChecked(False)
+
+        wave_form = QFormLayout(self.grp_wave)
+
+        self.in_wave_height = QLineEdit()
+        self.in_wave_height.setPlaceholderText("(m)")
+
+        self.in_wave_period = QLineEdit()
+        self.in_wave_period.setPlaceholderText("(s)")
+
+        self.in_wave_length = QLineEdit()
+        self.in_wave_length.setPlaceholderText("(m)")
+
+        self.in_wave_depth = QLineEdit()
+        self.in_wave_depth.setPlaceholderText("(m)")
+
+        self.in_wave_dir = QLineEdit()
+        self.in_wave_dir.setPlaceholderText("(deg)")
+
+        self.in_wave_phase = QLineEdit()
+        self.in_wave_phase.setPlaceholderText("(deg)")
+
+        self.in_wave_z0 = QLineEdit()
+        self.in_wave_z0.setPlaceholderText("(m)")
+
+        _dv_wave = QDoubleValidator(-1e12, 1e12, 6)
+
+        for le in (
+            self.in_wave_height,
+            self.in_wave_period,
+            self.in_wave_length,
+            self.in_wave_depth,
+            self.in_wave_dir,
+            self.in_wave_phase,
+            self.in_wave_z0,
+        ):
+            le.setValidator(_dv_wave)
+            le.setAlignment(Qt.AlignRight)
+
+        wave_form.addRow("height", self.in_wave_height)
+        wave_form.addRow("period", self.in_wave_period)
+        wave_form.addRow("wavelength", self.in_wave_length)
+        wave_form.addRow("depth", self.in_wave_depth)
+        wave_form.addRow("direction", self.in_wave_dir)
+        wave_form.addRow("phase", self.in_wave_phase)
+        wave_form.addRow("z0", self.in_wave_z0)
+
+        root.addWidget(self.grp_wave)
+        root.addStretch(1)
+
+        parent_layout.addWidget(w)
 
 def main():
     app = QApplication(sys.argv)
