@@ -37,10 +37,8 @@ if wave_enabled and wave_type == "regular":
         H=wave_cfg.get("height", 0.0),
         T=wave_cfg.get("period", 1.0),
         h=wave_cfg.get("depth", 1.0),
-        wavelength=wave_cfg.get("wavelength", 10.0),
         direction_deg=wave_cfg.get("direction_deg", 0.0),
         phase_deg=wave_cfg.get("phase_deg", 0.0),
-        z0=wave_cfg.get("z0", 0.0),
     )
 
 itimes=int(duration/dt)

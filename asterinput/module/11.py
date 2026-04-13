@@ -5,7 +5,7 @@ from scipy.interpolate import make_interp_spline
 
 # ── Parameters ──────────────────────────────────────────────
 Sn   = 0.19
-dw   = 0.00242
+dw   = 0.00141
 Urel = 0.5
 eps  = 1e-10
 nu   = 1.05e-6
@@ -54,7 +54,16 @@ cd_bessonneau  = bessonneau(phi)
 cd_lee         = lee_smooth(angles_deg)
 cd_loland      = loland(phi)
 cd_kristiansen = kristiansen(phi)
+# ── Difference & Mean ───────────────────────────────────────
+cd_loland_mean = np.mean(cd_loland)
+cd_kristiansen_mean = np.mean(cd_kristiansen)
 
+percent_higher = (cd_loland_mean - cd_kristiansen_mean) / cd_kristiansen_mean * 100
+
+print(f"Loland mean Cd        : {cd_loland_mean:.6f}")
+print(f"Kristiansen mean Cd   : {cd_kristiansen_mean:.6f}")
+print(f"Mean difference       : {cd_loland_mean - cd_kristiansen_mean:.6f}")
+print(f"Loland is {percent_higher:.2f}% higher than Kristiansen")
 
 # ── Plot ────────────────────────────────────────────────────
 plt.rcParams['font.family']      = 'Times New Roman'

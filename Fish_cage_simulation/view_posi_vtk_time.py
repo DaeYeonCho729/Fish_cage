@@ -4,6 +4,15 @@ import glob
 import re
 import numpy as np
 
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# asterinput/module 경로 추가
+module_path = os.path.join(current_dir, "..", "asterinput", "module")
+sys.path.append(module_path)
+
+import wave_model as wavemod
+
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QToolBar, QAction, QMessageBox, QLabel, QSlider
 )
@@ -56,6 +65,10 @@ class PosiVTKViewer(QMainWindow):
         self.lines_anchor_a  = None
         self.lines_anchor_b  = None
         self.lines_moorfrm   = None
+        self.materials = None
+        self.materials_path = None
+        self.wave_cfg = {}
+        self.wave_model = None
         self._camera_initialized = False
 
         # --- VTK 위젯 생성 ---
@@ -238,6 +251,190 @@ class PosiVTKViewer(QMainWindow):
         print(f"  Lines_pipe_top: {len(self.lines_pipe_top)}")
         print(f"  Line_braket   : {len(self.lines_bracket)}")
 
+    # ----------------- materials.py 찾기 & 로딩 -----------------
+    def _find_materials_from_posi(self, posi_path: str) -> str | None:
+        """
+        posi 파일 위치 기준으로 상위 폴더를 타고 올라가며 materials.py를 찾는다.
+        보통:
+        v2024/Fish_cage/asterinput/pythonOutput/posi/posi_*.txt
+        -> v2024/Fish_cage/asterinput/materials.py
+        """
+        cur = os.path.abspath(os.path.dirname(posi_path))
+        while True:
+            candidate_here = os.path.join(cur, "materials.py")
+            if os.path.isfile(candidate_here):
+                return candidate_here
+
+            candidate_aster = os.path.join(cur, "asterinput", "materials.py")
+            if os.path.isfile(candidate_aster):
+                return candidate_aster
+
+            parent = os.path.dirname(cur)
+            if parent == cur:
+                break
+            cur = parent
+        return None
+
+    def _ensure_materials_loaded(self, posi_path: str):
+        """
+        한 번만 materials.py를 읽어서 wave 설정과 wave_model 준비
+        """
+        if self.materials is not None:
+            return
+
+        mpath = self._find_materials_from_posi(posi_path)
+        if not mpath:
+            print("※ materials.py를 찾지 못했습니다. (wave surface는 표시되지 않습니다.)")
+            self.materials = {}
+            self.wave_cfg = {}
+            self.wave_model = None
+            return
+
+        scope = {}
+        try:
+            with open(mpath, "r", encoding="utf-8") as f:
+                code = f.read()
+            exec(code, scope)
+        except Exception as e:
+            print(f"※ materials.py 로딩 실패: {e}")
+            self.materials = {}
+            self.wave_cfg = {}
+            self.wave_model = None
+            return
+
+        materials = scope.get("materials", None)
+        if not isinstance(materials, dict):
+            print("※ materials.py 안에 materials 딕셔너리가 없습니다.")
+            self.materials = {}
+            self.wave_cfg = {}
+            self.wave_model = None
+            return
+
+        self.materials = materials
+        self.materials_path = mpath
+
+        sim = materials.get("simulation", {})
+        wave_cfg = sim.get("wave", {}) if isinstance(sim, dict) else {}
+        self.wave_cfg = wave_cfg if isinstance(wave_cfg, dict) else {}
+
+        enabled = bool(self.wave_cfg.get("enabled", False))
+        wave_type = str(self.wave_cfg.get("type", "regular")).lower()
+
+        if enabled and wave_type == "regular":
+            try:
+                self.wave_model = wavemod.LinearRegularWave(
+                    H=self.wave_cfg.get("height", 0.0),
+                    T=self.wave_cfg.get("period", 1.0),
+                    h=self.wave_cfg.get("depth", 1.0),
+                    direction_deg=self.wave_cfg.get("direction_deg", 0.0),
+                    phase_deg=self.wave_cfg.get("phase_deg", 0.0),
+                )
+                print(f"[materials] {mpath} 로드 완료")
+                print(f"  wave enabled   : {enabled}")
+                print(f"  wave type      : {wave_type}")
+                print(f"  H / T / L / h  : "
+                      f"{self.wave_cfg.get('height', 0.0)} / "
+                      f"{self.wave_cfg.get('period', 1.0)} / "
+                      f"{self.wave_cfg.get('depth', 1.0)}")
+            except Exception as e:
+                print(f"※ wave_model 생성 실패: {e}")
+                self.wave_model = None
+        else:
+            self.wave_model = None
+            print(f"[materials] {mpath} 로드 완료 (wave disabled)")
+
+    def _make_wave_actor(self, xyz: np.ndarray, t: float):
+        """
+        materials.py의 wave 설정과 wave_model.py의 eta()를 이용해
+        자유수면을 파란색 반투명 surface로 생성한다.
+        """
+        if self.wave_model is None:
+            return None
+
+        if xyz is None or len(xyz) == 0:
+            return None
+
+        try:
+            pts = np.asarray(xyz, dtype=float)
+            xmin, xmax = float(np.min(pts[:, 0])), float(np.max(pts[:, 0]))
+            ymin, ymax = float(np.min(pts[:, 1])), float(np.max(pts[:, 1]))
+
+            span_x = max(1.0, xmax - xmin)
+            span_y = max(1.0, ymax - ymin)
+            pad = 0.15 * max(span_x, span_y)
+
+            # 파장이 있으면 너무 작게 잘리지 않도록 약간 더 확장
+            wavelength = float(getattr(self.wave_model, "wavelength", 0.0) or 0.0)
+            pad = max(pad, 0.5 * wavelength)
+
+            xmin -= pad
+            xmax += pad
+            ymin -= pad
+            ymax += pad
+
+            nx = 80
+            ny = 80
+            xs = np.linspace(xmin, xmax, nx)
+            ys = np.linspace(ymin, ymax, ny)
+
+            wave_points = vtk.vtkPoints()
+            quads = vtk.vtkCellArray()
+
+            # z0=0 기준 자유수면
+            grid_xyz = np.zeros((nx * ny, 3), dtype=float)
+            idx = 0
+            for j in range(ny):
+                for i in range(nx):
+                    grid_xyz[idx, 0] = xs[i]
+                    grid_xyz[idx, 1] = ys[j]
+                    grid_xyz[idx, 2] = 0.0
+                    idx += 1
+
+            eta = self.wave_model.eta(grid_xyz, t)
+
+            idx = 0
+            for j in range(ny):
+                for i in range(nx):
+                    wave_points.InsertNextPoint(
+                        float(xs[i]),
+                        float(ys[j]),
+                        float(eta[idx])
+                    )
+                    idx += 1
+
+            for j in range(ny - 1):
+                for i in range(nx - 1):
+                    p0 = j * nx + i
+                    p1 = p0 + 1
+                    p2 = p0 + nx + 1
+                    p3 = p0 + nx
+
+                    quad = vtk.vtkQuad()
+                    quad.GetPointIds().SetId(0, p0)
+                    quad.GetPointIds().SetId(1, p1)
+                    quad.GetPointIds().SetId(2, p2)
+                    quad.GetPointIds().SetId(3, p3)
+                    quads.InsertNextCell(quad)
+
+            wave_poly = vtk.vtkPolyData()
+            wave_poly.SetPoints(wave_points)
+            wave_poly.SetPolys(quads)
+
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputData(wave_poly)
+
+            actor = vtk.vtkActor()
+            actor.SetMapper(mapper)
+            actor.GetProperty().SetColor(0.20, 0.45, 1.00)   # 파랑
+            actor.GetProperty().SetOpacity(0.35)
+            actor.GetProperty().SetInterpolationToPhong()
+
+            return actor
+
+        except Exception as e:
+            print(f"[WARN] wave actor 생성 실패: {e}")
+            return None
+
     # ----------------- 파일 열기 & 시퀀스 구성 -----------------
     def open_file_dialog(self):
         path, _ = QFileDialog.getOpenFileName(
@@ -399,7 +596,8 @@ class PosiVTKViewer(QMainWindow):
 
         # meshinfo(선 정보) 준비
         self._ensure_meshinfo_loaded(path)
-
+        self._ensure_materials_loaded(path)
+        
         x, y, z = arr[:, 0], arr[:, 1], arr[:, 2]
         n_nodes = arr.shape[0]
 
@@ -432,7 +630,16 @@ class PosiVTKViewer(QMainWindow):
         cam_state = self._get_camera_state() if self._camera_initialized else None
 
         # renderer 초기화
+        # renderer 초기화
         self.renderer.RemoveAllViewProps()
+
+        # 파랑 surface 먼저 추가
+        t = extract_time_from_name(path)
+        wave_actor = self._make_wave_actor(arr, t)
+        if wave_actor is not None:
+            self.renderer.AddActor(wave_actor)
+
+        # 구조물 점 추가
         self.renderer.AddActor(self.actor_points)
 
         # ------------------------------
@@ -569,7 +776,16 @@ class PosiVTKViewer(QMainWindow):
         # 상태 표시 (시간 + 인덱스)
         t = extract_time_from_name(path)
         idx_text = f"{self.current_index + 1}/{len(self.files)}" if self.files else "1/1"
-        self.status_label.setText(f"t = {t:.3f}  |  {idx_text}")
+
+        if self.wave_model is not None:
+            H = float(self.wave_cfg.get("height", 0.0) or 0.0)
+            T = float(self.wave_cfg.get("period", 0.0) or 0.0)
+            L = float(getattr(self.wave_model, "wavelength", 0.0) or 0.0)
+            self.status_label.setText(
+                f"t = {t:.3f}  |  {idx_text}  |  wave H={H:.3f}, T={T:.3f}, L={L:.3f}"
+            )
+        else:
+            self.status_label.setText(f"t = {t:.3f}  |  {idx_text}")
 
         self.setWindowTitle(f"posi VTK 3D Viewer - {os.path.basename(path)}")
         self.vtk_widget.GetRenderWindow().Render()

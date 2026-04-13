@@ -1088,11 +1088,9 @@ class MainWindow(QMainWindow):
                     "type": "regular",
                     "height": _getf(self.in_wave_height, 0.0) or 0.0,
                     "period": _getf(self.in_wave_period, 1.0) or 1.0,
-                    "wavelength": _getf(self.in_wave_length, 10.0) or 10.0,
                     "depth": _getf(self.in_wave_depth, 1.0) or 1.0,
                     "direction_deg": _getf(self.in_wave_dir, 0.0) or 0.0,
                     "phase_deg": _getf(self.in_wave_phase, 0.0) or 0.0,
-                    "z0": _getf(self.in_wave_z0, 0.0) or 0.0,
                 }
         
             st = self._form_state
@@ -1371,9 +1369,6 @@ class MainWindow(QMainWindow):
         self.in_wave_period = QLineEdit()
         self.in_wave_period.setPlaceholderText("(s)")
 
-        self.in_wave_length = QLineEdit()
-        self.in_wave_length.setPlaceholderText("(m)")
-
         self.in_wave_depth = QLineEdit()
         self.in_wave_depth.setPlaceholderText("(m)")
 
@@ -1383,30 +1378,23 @@ class MainWindow(QMainWindow):
         self.in_wave_phase = QLineEdit()
         self.in_wave_phase.setPlaceholderText("(deg)")
 
-        self.in_wave_z0 = QLineEdit()
-        self.in_wave_z0.setPlaceholderText("(m)")
-
         _dv_wave = QDoubleValidator(-1e12, 1e12, 6)
 
         for le in (
             self.in_wave_height,
             self.in_wave_period,
-            self.in_wave_length,
             self.in_wave_depth,
             self.in_wave_dir,
             self.in_wave_phase,
-            self.in_wave_z0,
         ):
             le.setValidator(_dv_wave)
             le.setAlignment(Qt.AlignRight)
 
         wave_form.addRow("height", self.in_wave_height)
         wave_form.addRow("period", self.in_wave_period)
-        wave_form.addRow("wavelength", self.in_wave_length)
         wave_form.addRow("depth", self.in_wave_depth)
         wave_form.addRow("direction", self.in_wave_dir)
         wave_form.addRow("phase", self.in_wave_phase)
-        wave_form.addRow("z0", self.in_wave_z0)
 
         root.addWidget(self.grp_wave)
         root.addStretch(1)
